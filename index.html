@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light}html,body{margin:0}[hidden]{display:none!important}</style>
+<title>Tradebook Analyzer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a ledger. One narrow column, tabular figures, the rule-break table as the main exhibit. */
+:root{
+  --bg:#f5f6f3; --surface:#ffffff; --fg:#15201b; --muted:#5d6a63; --line:#dde2dc;
+  --accent:#3947b8; --accent-soft:#e8ebfa;
+  --gain:#16794a; --loss:#c23a2b; --gain-soft:#e3f3ea; --loss-soft:#fbe9e6;
+  --font-display:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1512; --surface:#161e1a; --fg:#e6ece8; --muted:#97a59d; --line:#2a352f;
+    --accent:#8c98ff; --accent-soft:#1f2547;
+    --gain:#4cc98a; --loss:#ff7b6b; --gain-soft:#143324; --loss-soft:#3a1a16;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1512; --surface:#161e1a; --fg:#e6ece8; --muted:#97a59d; --line:#2a352f;
+  --accent:#8c98ff; --accent-soft:#1f2547;
+  --gain:#4cc98a; --loss:#ff7b6b; --gain-soft:#143324; --loss-soft:#3a1a16;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5;
+  padding-block:28px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1{font-family:var(--font-display);font-size:30px;line-height:1.15;margin:0;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+h2{font-family:var(--font-display);font-size:18px;margin:0 0 4px;font-weight:650;text-wrap:balance}
+p{margin:0}
+.sub{color:var(--muted);max-width:62ch}
+.num,td.n,th.n{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.gain{color:var(--gain)} .loss{color:var(--loss)}
+section{display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0}
+.drop{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between;border:1.5px dashed var(--line);border-radius:6px;padding:16px;background:var(--surface)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop b{font-weight:600}
+.btn{font:inherit;font-weight:600;background:var(--accent);color:#fff;border:0;border-radius:4px;padding:9px 16px;cursor:pointer}
+:root[data-theme="dark"] .btn{color:#0f1512}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn{color:#0f1512}}
+.btn:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.status{font-size:13px;color:var(--muted)}
+.status.err{color:var(--loss)}
+.sample{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:var(--accent-soft);color:var(--accent);padding:3px 8px;border-radius:3px}
+.settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+label.f input{font:inherit;font-family:var(--font-mono);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.split{grid-template-columns:1fr}}
+.verdict{border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.verdict.ok{background:var(--gain-soft)} .verdict.bad{background:var(--loss-soft)}
+.verdict .big{font-family:var(--font-mono);font-size:26px;font-weight:500;font-variant-numeric:tabular-nums}
+.verdict .lab{font-size:13px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.stat{padding:12px 14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat .k{font-size:12px;color:var(--muted);letter-spacing:.03em}
+.stat .v{font-family:var(--font-mono);font-size:18px;font-variant-numeric:tabular-nums}
+.stat .h{font-size:12px;color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th{font-size:12px;font-weight:600;color:var(--muted);text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;letter-spacing:.03em}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th.n,td.n{text-align:right;white-space:nowrap}
+td small{display:block;color:var(--muted);font-size:12px}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;background:var(--loss-soft);color:var(--loss);margin:0 4px 2px 0;white-space:nowrap}
+.note{font-size:13px;color:var(--muted);max-width:70ch}
+svg.chart{width:100%;height:auto;display:block}
+svg text{fill:var(--muted);font-family:var(--font-mono);font-size:11px}
+.sig{white-space:nowrap}
+</style>
+
+</head>
+<body>
+<main>
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>Tradebook Analyzer</h1>
+    <p class="sub">Drop in your Zerodha F&amp;O tradebook (.xlsx or .csv). Each buy and sell is matched into round trips, then checked against your own trading rules. Your file is read in this browser and is not uploaded anywhere.</p>
+  </header>
+
+  <section>
+    <label class="drop" id="drop" for="file">
+      <span><b>Choose a tradebook file</b> or drop it here<br><span class="status" id="status">Showing sample data until you add your file.</span></span>
+      <span class="btn" role="button" tabindex="-1">Browse</span>
+      <input id="file" type="file" accept=".xlsx,.xls,.csv" hidden>
+    </label>
+  </section>
+
+  <section>
+    <h2>Your rules</h2>
+    <div class="settings panel">
+      <label class="f" for="cutoff">No new entries after<input id="cutoff" type="time" value="14:30"></label>
+      <label class="f" for="slow">Exit losers within (minutes)<input id="slow" type="number" min="1" value="120"></label>
+      <label class="f" for="limit">Daily loss limit (₹)<input id="limit" type="number" min="0" value="5000"></label>
+      <label class="f" for="charges">Total charges for the period (₹)<input id="charges" type="number" min="0" placeholder="from your P&amp;L report"></label>
+    </div>
+    <p class="note">These start as example limits. Change them to your own and everything below recalculates. Charges are optional: the tradebook does not include them, so copy the total from your P&amp;L statement to see net results.</p>
+  </section>
+
+  <div id="out" style="display:contents"></div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ==CORE==
+function parseTs(s){
+  const m=/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/.exec(String(s));
+  if(!m) return null;
+  return {min:Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0))/60000,date:m[1]+'-'+m[2]+'-'+m[3],tod:(+m[4])*60+(+m[5]),hour:+m[4]};
+}
+function mean(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
+function median(a){if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2}
+function sd(a){if(a.length<2)return 0;const m=mean(a);return Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/(a.length-1))}
+function analyze(fills,opt){
+  const F=fills.map((f,i)=>({...f,i})).sort((a,b)=>a.ts.min-b.ts.min||a.i-b.i);
+  const open={},R=[];
+  for(const f of F){
+    const lots=open[f.sym]||(open[f.sym]=[]);
+    let q=f.q;
+    if(lots.length&&lots[0].side!==f.side){
+      while(q>0&&lots.length){
+        const l=lots[0],m=Math.min(q,l.q);
+        const pnl=(l.side===1?(f.p-l.p):(l.p-f.p))*m;
+        R.push({sym:f.sym,q:m,side:l.side,pin:l.p,pout:f.p,ein:l.ts,eout:f.ts,pnl,hold:f.ts.min-l.ts.min,avgdown:l.avgdown});
+        l.q-=m;q-=m;if(l.q<=0)lots.shift();
+      }
+    }
+    if(q>0){
+      let ad=false;
+      if(lots.length){ad=f.side===1?f.p<Math.min(...lots.map(l=>l.p)):f.p>Math.max(...lots.map(l=>l.p));}
+      lots.push({q,p:f.p,ts:f.ts,side:f.side,avgdown:ad});
+    }
+  }
+  R.sort((a,b)=>a.ein.min-b.ein.min);
+  for(const r of R){
+    let realized=0;
+    for(const o of R){if(o!==r&&o.eout.date===r.ein.date&&o.eout.min<=r.ein.min)realized+=o.pnl}
+    r.flags={
+      overnight:r.ein.date!==r.eout.date,
+      avgdown:!!r.avgdown,
+      late:r.ein.tod>opt.cutoff,
+      slow:r.pnl<0&&r.hold>opt.slow,
+      afterLimit:opt.limit>0&&realized<=-opt.limit
+    };
+    r.any=Object.values(r.flags).some(Boolean);
+  }
+  const n=R.length,P=R.map(r=>r.pnl),W=R.filter(r=>r.pnl>0),L=R.filter(r=>r.pnl<0);
+  const gross=P.reduce((a,b)=>a+b,0),m=mean(P),s=sd(P);
+  const sorted=[...P].sort((a,b)=>b-a);
+  const stats={n,gross,wins:W.length,losses:L.length,winRate:n?W.length/n:0,
+    avgWin:mean(W.map(r=>r.pnl)),avgLoss:mean(L.map(r=>r.pnl)),
+    payoff:L.length&&W.length?mean(W.map(r=>r.pnl))/-mean(L.map(r=>r.pnl)):0,
+    expectancy:m,t:s&&n>1?m/(s/Math.sqrt(n)):0,
+    holdWin:median(W.map(r=>r.hold)),holdLoss:median(L.map(r=>r.hold)),
+    grossNoBest3:gross-sorted.slice(0,3).reduce((a,b)=>a+b,0)};
+  const keys=['overnight','avgdown','late','slow','afterLimit'];
+  const rules={};
+  for(const k of keys){const fl=R.filter(r=>r.flags[k]);const p=fl.reduce((a,r)=>a+r.pnl,0);rules[k]={count:fl.length,pnl:p,avg:fl.length?p/fl.length:0,without:gross-p}}
+  const clean=R.filter(r=>!r.any),dirty=R.filter(r=>r.any);
+  const days={},hours={};
+  for(const r of R){
+    (days[r.ein.date]||(days[r.ein.date]={pnl:0,n:0}));days[r.ein.date].pnl+=r.pnl;days[r.ein.date].n++;
+    (hours[r.ein.hour]||(hours[r.ein.hour]={pnl:0,n:0,w:0}));hours[r.ein.hour].pnl+=r.pnl;hours[r.ein.hour].n++;if(r.pnl>0)hours[r.ein.hour].w++;
+  }
+  return {R,stats,rules,clean:{n:clean.length,pnl:clean.reduce((a,r)=>a+r.pnl,0)},dirty:{n:dirty.length,pnl:dirty.reduce((a,r)=>a+r.pnl,0)},days,hours};
+}
+function normHeader(h){return String(h==null?'':h).toLowerCase().replace(/[^a-z0-9]/g,'')}
+function fillsFromRows(rows){
+  let hi=-1,col={};
+  for(let i=0;i<rows.length;i++){
+    const c={};rows[i].forEach((h,j)=>{const k=normHeader(h);if(k)c[k]=j});
+    if(c.symbol!=null&&c.tradetype!=null&&c.quantity!=null&&c.price!=null){hi=i;col=c;break}
+  }
+  if(hi<0) throw new Error('Could not find the columns Symbol, Trade Type, Quantity and Price. Is this the F&O tradebook?');
+  const tcol=col.orderexecutiontime!=null?col.orderexecutiontime:null;
+  if(tcol==null) throw new Error('This file has no Order Execution Time column, which the analysis needs.');
+  const out=[];
+  for(let i=hi+1;i<rows.length;i++){
+    const r=rows[i];if(!r||!r[col.symbol])continue;
+    const type=String(r[col.tradetype]).toLowerCase();if(type!=='buy'&&type!=='sell')continue;
+    let tv=r[tcol];
+    if(tv instanceof Date) tv=tv.toISOString();
+    else if(typeof tv==='number'){tv=new Date(Math.round((tv-25569)*86400000)).toISOString()}
+    const ts=parseTs(tv);if(!ts)continue;
+    out.push({sym:String(r[col.symbol]),side:type==='buy'?1:-1,q:+r[col.quantity],p:+r[col.price],ts});
+  }
+  if(!out.length) throw new Error('No buy or sell rows were found in this file.');
+  return out;
+}
+// ==END==
+
+const SAMPLE=[
+ ['NIFTY26NOV23000CE','buy',65,120,'2026-11-02T09:40:11'],['NIFTY26NOV23000CE','sell',65,155,'2026-11-02T09:58:40'],
+ ['NIFTY26NOV23000PE','buy',65,110,'2026-11-02T10:20:05'],['NIFTY26NOV23000PE','sell',65,134,'2026-11-02T10:41:30'],
+ ['NIFTY26NOV22900PE','buy',65,90,'2026-11-02T11:05:00'],['NIFTY26NOV22900PE','buy',65,70,'2026-11-02T11:40:12'],
+ ['NIFTY26NOV22900PE','sell',65,55,'2026-11-02T13:50:00'],['NIFTY26NOV22900PE','sell',65,52,'2026-11-02T14:05:21'],
+ ['NIFTY26NOV23100CE','buy',65,60,'2026-11-02T15:05:00'],['NIFTY26NOV23100CE','sell',65,38,'2026-11-03T09:21:44'],
+ ['NIFTY26NOV23050CE','buy',65,100,'2026-11-03T10:12:00'],['NIFTY26NOV23050CE','sell',65,141,'2026-11-03T10:30:10'],
+ ['NIFTY26NOV23000PE','buy',65,95,'2026-11-03T11:02:00'],['NIFTY26NOV23000PE','sell',65,108,'2026-11-03T11:15:33'],
+ ['NIFTY26NOV23100CE','buy',65,80,'2026-11-03T12:10:00'],['NIFTY26NOV23100CE','sell',65,99,'2026-11-03T12:40:08'],
+ ['NIFTY26NOV22950PE','buy',65,85,'2026-11-03T13:15:00'],['NIFTY26NOV22950PE','sell',65,66,'2026-11-03T15:20:00'],
+ ['NIFTY26NOV23000CE','buy',65,130,'2026-11-04T09:20:00'],['NIFTY26NOV23000CE','sell',65,110,'2026-11-04T09:50:00'],
+ ['NIFTY26NOV23000CE','buy',65,108,'2026-11-04T10:05:00'],['NIFTY26NOV23000CE','sell',65,150,'2026-11-04T10:45:00'],
+ ['NIFTY26NOV23050PE','buy',65,75,'2026-11-04T11:30:00'],['NIFTY26NOV23050PE','sell',65,92,'2026-11-04T11:52:00']
+].map(r=>({sym:r[0],side:r[1]==='buy'?1:-1,q:r[2],p:r[3],ts:parseTs(r[4])}));
+
+let FILLS=SAMPLE,IS_SAMPLE=true,FILENAME='';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function money(n,plus){const r=Math.round(n);return (r<0?'−':(plus&&r>0?'+':''))+'₹'+Math.abs(r).toLocaleString('en-IN')}
+function cls(n){return n>0?'gain':n<0?'loss':''}
+function mins(m){m=Math.round(m);if(m<60)return m+' min';const h=Math.floor(m/60);return h+' h '+(m%60)+' min'}
+function opts(){
+  const [h,m]=($('cutoff').value||'14:30').split(':').map(Number);
+  return {cutoff:h*60+m,slow:Math.max(1,+$('slow').value||120),limit:Math.max(0,+$('limit').value||0)};
+}
+function barChart(items,fmtLabel){
+  if(!items.length) return '';
+  const W=640,H=210,top=22,bot=30,pad=8;
+  const max=Math.max(...items.map(i=>Math.abs(i.value)),1);
+  const hasNeg=items.some(i=>i.value<0),hasPos=items.some(i=>i.value>0);
+  const plotH=H-top-bot;
+  const zero=hasNeg&&hasPos?top+plotH/2:(hasNeg?top:top+plotH);
+  const scale=(hasNeg&&hasPos?plotH/2:plotH)/max;
+  const bw=Math.min(46,(W-pad*2)/items.length*0.62),step=(W-pad*2)/items.length;
+  let g='<line x1="0" x2="'+W+'" y1="'+zero+'" y2="'+zero+'" stroke="var(--line)"/>';
+  items.forEach((it,i)=>{
+    const x=pad+step*i+(step-bw)/2,h=Math.abs(it.value)*scale,y=it.value>=0?zero-h:zero;
+    g+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(h,1).toFixed(1)+'" fill="'+(it.value>=0?'var(--gain)':'var(--loss)')+'"/>';
+    const ly=it.value>=0?y-4:y+h+12;
+    g+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle">'+esc(fmtLabel(it.value))+'</text>';
+    g+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-10)+'" text-anchor="middle">'+esc(it.label)+'</text>';
+  });
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Bar chart of P&amp;L">'+g+'</svg>';
+}
+function k(n){const a=Math.abs(n);return (n<0?'−':'')+(a>=1000?(a/1000).toFixed(a>=10000?0:1)+'k':Math.round(a))}
+function render(){
+  let A;
+  try{A=analyze(FILLS,opts())}catch(e){$('status').textContent=e.message;$('status').className='status err';return}
+  const S=A.stats,o=opts(),charges=+$('charges').value||0;
+  const rt=A.R;
+  const net=S.gross-charges;
+  const tWord=Math.abs(S.t)<1?'Not distinguishable from luck yet':Math.abs(S.t)<2?'Some signal, not yet convincing':'Reasonably strong signal';
+  const cutTxt=$('cutoff').value||'14:30';
+  const ruleDefs=[
+    ['overnight','Held overnight','Bought on one day, sold on another.'],
+    ['avgdown','Added to a losing position','Bought at a worse price than a lot you already held in the same contract.'],
+    ['late','Entered after '+cutTxt,'New position opened after your cutoff.'],
+    ['slow','Loser held over '+o.slow+' min','Closed at a loss, after more than your exit time.'],
+    ['afterLimit','Entered after the daily loss limit','Opened after your realized loss for the day had reached '+money(o.limit)+'.']
+  ];
+  const rows=ruleDefs.map(d=>{const r=A.rules[d[0]];return '<tr><td>'+d[1]+'<small>'+d[2]+'</small></td><td class="n">'+r.count+'</td><td class="n '+cls(r.pnl)+'">'+money(r.pnl,true)+'</td><td class="n '+cls(r.avg)+'">'+(r.count?money(r.avg,true):'–')+'</td><td class="n '+cls(r.without)+'">'+money(r.without,true)+'</td></tr>'}).join('');
+  const cleanAvg=A.clean.n?A.clean.pnl/A.clean.n:0,dirtyAvg=A.dirty.n?A.dirty.pnl/A.dirty.n:0;
+  const dayItems=Object.keys(A.days).sort().map(d=>({label:d.slice(8)+'/'+d.slice(5,7),value:A.days[d].pnl}));
+  const hourItems=Object.keys(A.hours).map(Number).sort((a,b)=>a-b).map(h=>({label:String(h).padStart(2,'0')+'h',value:A.hours[h].pnl}));
+  const worst=[...rt].sort((a,b)=>a.pnl-b.pnl).slice(0,10);
+  const tagNames={overnight:'overnight',avgdown:'added to loser',late:'late entry',slow:'slow exit',afterLimit:'past loss limit'};
+  const worstRows=worst.map(r=>{
+    const tags=Object.keys(r.flags).filter(f=>r.flags[f]).map(f=>'<span class="tag">'+tagNames[f]+'</span>').join('');
+    return '<tr><td>'+esc(r.sym)+'<small>'+r.ein.date+' '+String(Math.floor(r.ein.tod/60)).padStart(2,'0')+':'+String(r.ein.tod%60).padStart(2,'0')+' &middot; '+(r.side===1?'long':'short')+' '+r.q+'</small></td><td class="n">'+r.pin.toFixed(2)+' → '+r.pout.toFixed(2)+'</td><td class="n">'+mins(r.hold)+'</td><td class="n loss">'+money(r.pnl,true)+'</td><td>'+(tags||'–')+'</td></tr>';
+  }).join('');
+  const costLine=charges>0?'<div class="stat"><span class="k">NET OF CHARGES</span><span class="v '+cls(net)+'">'+money(net,true)+'</span><span class="h">'+money(charges)+' charges, about '+money(S.n?charges/S.n:0)+' per trade</span></div>':'';
+  const src=IS_SAMPLE?'<span class="sample">Sample data</span> <span class="status">24 made-up fills so you can see how the report reads.</span>':'<span class="status">'+esc(FILENAME)+' &middot; '+FILLS.length+' fills &middot; '+S.n+' round trips</span>';
+  $('out').innerHTML=
+  '<section>'+src+
+    '<div class="split">'+
+      '<div class="verdict ok"><span class="lab">Trades that followed every rule ('+A.clean.n+')</span><span class="big '+cls(A.clean.pnl)+'">'+money(A.clean.pnl,true)+'</span><span class="lab">'+(A.clean.n?money(cleanAvg,true)+' per trade':'none')+'</span></div>'+
+      '<div class="verdict bad"><span class="lab">Trades that broke at least one rule ('+A.dirty.n+')</span><span class="big '+cls(A.dirty.pnl)+'">'+money(A.dirty.pnl,true)+'</span><span class="lab">'+(A.dirty.n?money(dirtyAvg,true)+' per trade':'none')+'</span></div>'+
+    '</div></section>'+
+  '<section><h2>Which rules cost you</h2>'+
+    '<div class="tbl"><table><thead><tr><th>Rule</th><th class="n">Trades</th><th class="n">P&amp;L of those</th><th class="n">Per trade</th><th class="n">Total without them</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<p class="note">A trade can break several rules, so the rows overlap. "Total without them" simply removes those trades from your gross total. A real rule would change the exit rather than delete the trade, so read it as the size of the problem, not a forecast.</p></section>'+
+  '<section><h2>The numbers</h2><div class="stats">'+
+    '<div class="stat"><span class="k">GROSS P&amp;L</span><span class="v '+cls(S.gross)+'">'+money(S.gross,true)+'</span><span class="h">'+S.n+' round trips</span></div>'+costLine+
+    '<div class="stat"><span class="k">WIN RATE</span><span class="v">'+(S.winRate*100).toFixed(0)+'%</span><span class="h">'+S.wins+' wins, '+S.losses+' losses</span></div>'+
+    '<div class="stat"><span class="k">AVERAGE WIN / LOSS</span><span class="v">'+money(S.avgWin)+' / '+money(S.avgLoss)+'</span><span class="h">payoff ratio '+S.payoff.toFixed(2)+(S.payoff>0?' (needs '+(100/(1+S.payoff)).toFixed(0)+'% wins to break even)':'')+'</span></div>'+
+    '<div class="stat"><span class="k">PROFIT PER TRADE</span><span class="v '+cls(S.expectancy)+'">'+money(S.expectancy,true)+'</span><span class="h">before charges</span></div>'+
+    '<div class="stat"><span class="k">MEDIAN HOLD</span><span class="v">'+mins(S.holdWin)+' / '+mins(S.holdLoss)+'</span><span class="h">winners / losers</span></div>'+
+    '<div class="stat"><span class="k">EDGE TEST (T-STAT)</span><span class="v">'+S.t.toFixed(2)+'</span><span class="h">'+tWord+'</span></div>'+
+    '<div class="stat"><span class="k">WITHOUT YOUR BEST 3 TRADES</span><span class="v '+cls(S.grossNoBest3-charges)+'">'+money(S.grossNoBest3-charges,true)+'</span><span class="h">'+(charges>0?'after charges':'before charges')+'</span></div>'+
+  '</div></section>'+
+  '<section><h2>P&amp;L by day</h2><div class="panel">'+barChart(dayItems,v=>k(v))+'</div></section>'+
+  '<section><h2>P&amp;L by entry hour</h2><div class="panel">'+barChart(hourItems,v=>k(v))+'</div>'+
+    '<p class="note">Each bar adds up the trades you opened in that hour.</p></section>'+
+  '<section><h2>Ten largest losses</h2><div class="tbl"><table><thead><tr><th>Contract</th><th class="n">Entry → exit</th><th class="n">Held</th><th class="n">P&amp;L</th><th>Rules broken</th></tr></thead><tbody>'+worstRows+'</tbody></table></div></section>';
+}
+function load(file){
+  const rd=new FileReader();
+  rd.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames.find(n=>/f&?o/i.test(n))||wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
+      FILLS=fillsFromRows(rows);IS_SAMPLE=false;FILENAME=file.name;
+      $('status').textContent='Loaded '+file.name;$('status').className='status';render();
+    }catch(err){$('status').textContent=err.message||'Could not read that file.';$('status').className='status err'}
+  };
+  rd.readAsArrayBuffer(file);
+}
+$('file').addEventListener('change',e=>{if(e.target.files[0])load(e.target.files[0])});
+const dz=$('drop');
+['dragenter','dragover'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.add('over')}));
+['dragleave','drop'].forEach(t=>dz.addEventListener(t,e=>{e.preventDefault();dz.classList.remove('over')}));
+dz.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f)load(f)});
+['cutoff','slow','limit','charges'].forEach(id=>$(id).addEventListener('input',render));
+render();
+</script>
+</body>
+</html>
