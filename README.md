@@ -3,8 +3,11 @@
 A single-page tool for Zerodha F&O tradebooks. Drop in your tradebook (.xlsx or .csv) and it:
 
 - matches each buy and sell into round trips (first in, first out)
-- flags trades that broke your own rules: held overnight, added to a losing position, entered after a cutoff time, loser held too long, entered after the daily loss limit
-- shows win rate, average win and loss, profit per trade, a simple edge test, and P&L by day and by entry hour
+- flags trades that broke your own rules: held overnight, added to a losing position, entered after a cutoff time, loser held too long, entered after the daily loss limit, chasing after losses
+- leads with a plain-language verdict, your biggest leak, and a ranked list of which habits cost the most
+- shows behavioural patterns linked to worse results: the tilt curve (win rate as daily losses stack), bet size after losses, re-entry speed after a loss, red-day endings, and morning vs afternoon
+- shows win rate, average win and loss, profit per trade, a simple edge test, an equity curve with max drawdown, and P&L by day and by entry hour
+- one click copies the whole report as text
 
 Your file is read in the browser. Nothing is uploaded or stored.
 
