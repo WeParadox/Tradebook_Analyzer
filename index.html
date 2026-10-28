@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>:root{color-scheme:light}html,body{margin:0}[hidden]{display:none!important}</style>
+<style>html,body{margin:0}[hidden]{display:none!important}</style>
 <title>Tradebook Analyzer</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: a ledger. One narrow column, tabular figures, the rule-break table as the main exhibit. */
@@ -39,7 +38,7 @@ h1{font-family:var(--font-display);font-size:30px;line-height:1.15;margin:0;font
 h2{font-family:var(--font-display);font-size:18px;margin:0 0 4px;font-weight:650;text-wrap:balance}
 p{margin:0}
 .sub{color:var(--muted);max-width:62ch}
-.num,td.n,th.n{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+td.n,th.n{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
 .gain{color:var(--gain)} .loss{color:var(--loss)}
 section{display:flex;flex-direction:column;gap:12px;min-width:0}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0}
@@ -56,8 +55,6 @@ section{display:flex;flex-direction:column;gap:12px;min-width:0}
 .settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
 label.f input{font:inherit;font-family:var(--font-mono);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
-.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:560px){.split{grid-template-columns:1fr}}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
 .stat{padding:12px 14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0;display:flex;flex-direction:column;gap:2px;min-width:0}
 .stat .k{font-size:12px;color:var(--muted);letter-spacing:.03em}
@@ -74,7 +71,6 @@ td small{display:block;color:var(--muted);font-size:12px}
 .note{font-size:13px;color:var(--muted);max-width:70ch}
 svg.chart{width:100%;height:auto;display:block}
 svg text{fill:var(--muted);font-family:var(--font-mono);font-size:11px}
-.sig{white-space:nowrap}
 /* Verdict card */
 .vc{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
 .vc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
@@ -89,7 +85,7 @@ svg text{fill:var(--muted);font-family:var(--font-mono);font-size:11px}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.ghost{color:var(--accent)}}
 /* Leak card */
 .leak{border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
-.leak.bad{background:var(--loss-soft)} .leak.ok{background:var(--gain-soft)}
+.leak.bad{background:var(--loss-soft)}
 .leak .k{font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--muted)}
 .leak h2{font-size:16px;margin:0}
 .leak p{font-size:13px;color:var(--muted)}
@@ -120,6 +116,8 @@ svg text{fill:var(--muted);font-family:var(--font-mono);font-size:11px}
 .h.wr{display:flex;flex-direction:column;gap:3px;margin:2px 0}
 .wb{display:block;height:7px;border-radius:3px;min-width:2px}
 .nag{font-size:13px;color:var(--loss);background:var(--loss-soft);border-radius:4px;padding:8px 10px;margin:0}
+.warn{font-size:13px;background:var(--accent-soft);border-radius:4px;padding:10px 12px;margin:0;display:flex;flex-direction:column;gap:3px}
+.warn b{font-weight:600}
 .disc{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:10px 14px}
 .disc summary{cursor:pointer;font-weight:600;font-size:14px}
 .disc p{margin:8px 0 0;font-size:13px;color:var(--muted);max-width:70ch}
@@ -145,7 +143,7 @@ svg text{fill:var(--muted);font-family:var(--font-mono);font-size:11px}
     <h2>Your rules</h2>
     <div class="settings panel">
       <label class="f" for="cutoff">No new entries after<input id="cutoff" type="time" value="14:30"></label>
-      <label class="f" for="slow">Exit losers within (minutes)<input id="slow" type="number" min="1" value="120"></label>
+      <label class="f" for="slow">Exit losers within (market minutes)<input id="slow" type="number" min="1" value="120"></label>
       <label class="f" for="limit">Daily loss limit (₹)<input id="limit" type="number" min="0" value="5000"></label>
       <label class="f" for="charges">Total charges for the period (₹)<input id="charges" type="number" min="0" placeholder="from your P&amp;L report"></label>
     </div>
@@ -163,6 +161,34 @@ function parseTs(s){
   if(!m) return null;
   return {min:Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0))/60000,date:m[1]+'-'+m[2]+'-'+m[3],tod:(+m[4])*60+(+m[5]),hour:+m[4]};
 }
+// Excel date cells arrive as Date objects whose LOCAL parts are the wall-clock time in the sheet,
+// so read them with local getters. toISOString() would shift the time into UTC.
+function dateToStr(d){d=new Date(Math.round(d.getTime()/1000)*1000);const p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())}
+// Time in the market: overnight and weekend gaps are not counted as holding time.
+const MKT_OPEN=9*60+15,MKT_CLOSE=15*60+30;
+function dayNum(s){return Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10))/86400000}
+function marketHold(a,b){
+  if(a.date===b.date)return Math.max(b.min-a.min,0);
+  const c=t=>Math.min(Math.max(t,MKT_OPEN),MKT_CLOSE);
+  let h=(MKT_CLOSE-c(a.tod))+(c(b.tod)-MKT_OPEN);
+  for(let d=dayNum(a.date)+1;d<dayNum(b.date);d++){const w=new Date(d*86400000).getUTCDay();if(w!==0&&w!==6)h+=MKT_CLOSE-MKT_OPEN}
+  return Math.max(h,0);
+}
+// Small CSV reader (quotes, CRLF, BOM) so .csv files never depend on the Excel library.
+function parseCsv(text){
+  text=text.replace(/^﻿/,'');
+  const rows=[];let row=[],cur='',q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cur+='"';i++}else q=false}else cur+=c}
+    else if(c==='"')q=true;
+    else if(c===','){row.push(cur);cur=''}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cur);cur='';rows.push(row);row=[]}
+    else cur+=c;
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row)}
+  return rows;
+}
 function mean(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
 function median(a){if(!a.length)return 0;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2}
 function sd(a){if(a.length<2)return 0;const m=mean(a);return Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/(a.length-1))}
@@ -176,7 +202,7 @@ function analyze(fills,opt){
       while(q>0&&lots.length){
         const l=lots[0],m=Math.min(q,l.q);
         const pnl=(l.side===1?(f.p-l.p):(l.p-f.p))*m;
-        R.push({sym:f.sym,q:m,side:l.side,pin:l.p,pout:f.p,ein:l.ts,eout:f.ts,pnl,hold:f.ts.min-l.ts.min,avgdown:l.avgdown});
+        R.push({sym:f.sym,q:m,side:l.side,pin:l.p,pout:f.p,ein:l.ts,eout:f.ts,pnl,hold:marketHold(l.ts,f.ts),avgdown:l.avgdown});
         l.q-=m;q-=m;if(l.q<=0)lots.shift();
       }
     }
@@ -186,12 +212,17 @@ function analyze(fills,opt){
       lots.push({q,p:f.p,ts:f.ts,side:f.side,avgdown:ad});
     }
   }
+  // Lots still open at the end of the file: no closing trade, so they are left out of every number.
+  const openLots=[];
+  for(const sym in open)for(const l of open[sym])openLots.push({sym,side:l.side,q:l.q,p:l.p,ts:l.ts});
   R.sort((a,b)=>a.ein.min-b.ein.min);
-  const pd={};
-  for(const r of R){const d=r.ein.date,c=pd[d]||0;r.priorLosses=c;if(r.pnl<0)pd[d]=c+1}
   for(const r of R){
-    let realized=0;
-    for(const o of R){if(o!==r&&o.eout.date===r.ein.date&&o.eout.min<=r.ein.min)realized+=o.pnl}
+    // Only trades that had already closed by this entry count: what you knew at the time.
+    let realized=0,closedLosses=0;
+    for(const o of R){
+      if(o!==r&&o.eout.date===r.ein.date&&o.eout.min<=r.ein.min){realized+=o.pnl;if(o.pnl<0)closedLosses++}
+    }
+    r.priorLosses=closedLosses;
     r.flags={
       overnight:r.ein.date!==r.eout.date,
       avgdown:!!r.avgdown,
@@ -200,7 +231,6 @@ function analyze(fills,opt){
       afterLimit:opt.limit>0&&realized<=-opt.limit,
       chase:r.priorLosses>=2
     };
-    r.any=Object.values(r.flags).some(Boolean);
   }
   const n=R.length,P=R.map(r=>r.pnl),W=R.filter(r=>r.pnl>0),L=R.filter(r=>r.pnl<0);
   const gross=P.reduce((a,b)=>a+b,0),m=mean(P),s=sd(P);
@@ -214,13 +244,13 @@ function analyze(fills,opt){
   const keys=['overnight','avgdown','late','slow','afterLimit','chase'];
   const rules={};
   for(const k of keys){const fl=R.filter(r=>r.flags[k]);const p=fl.reduce((a,r)=>a+r.pnl,0);rules[k]={count:fl.length,pnl:p,avg:fl.length?p/fl.length:0,without:gross-p}}
-  const clean=R.filter(r=>!r.any),dirty=R.filter(r=>r.any);
   const days={},hours={};
   for(const r of R){
-    (days[r.ein.date]||(days[r.ein.date]={pnl:0,n:0}));days[r.ein.date].pnl+=r.pnl;days[r.ein.date].n++;
+    // Daily P&L is booked on the day the trade closed (realized), not the day it opened.
+    (days[r.eout.date]||(days[r.eout.date]={pnl:0,n:0}));days[r.eout.date].pnl+=r.pnl;days[r.eout.date].n++;
     (hours[r.ein.hour]||(hours[r.ein.hour]={pnl:0,n:0,w:0}));hours[r.ein.hour].pnl+=r.pnl;hours[r.ein.hour].n++;if(r.pnl>0)hours[r.ein.hour].w++;
   }
-  return {R,stats,rules,clean:{n:clean.length,pnl:clean.reduce((a,r)=>a+r.pnl,0)},dirty:{n:dirty.length,pnl:dirty.reduce((a,r)=>a+r.pnl,0)},days,hours};
+  return {R,stats,rules,days,hours,open:openLots};
 }
 function normHeader(h){return String(h==null?'':h).toLowerCase().replace(/[^a-z0-9]/g,'')}
 function fillsFromRows(rows){
@@ -237,7 +267,7 @@ function fillsFromRows(rows){
     const r=rows[i];if(!r||!r[col.symbol])continue;
     const type=String(r[col.tradetype]).toLowerCase();if(type!=='buy'&&type!=='sell')continue;
     let tv=r[tcol];
-    if(tv instanceof Date) tv=tv.toISOString();
+    if(tv instanceof Date) tv=dateToStr(tv);
     else if(typeof tv==='number'){tv=new Date(Math.round((tv-25569)*86400000)).toISOString()}
     const ts=parseTs(tv);if(!ts)continue;
     out.push({sym:String(r[col.symbol]),side:type==='buy'?1:-1,q:+r[col.quantity],p:+r[col.price],ts});
@@ -250,7 +280,7 @@ function fillsFromRows(rows){
 // ==INSIGHTS==
 function avgOf(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
 function medOf(a){if(!a.length)return 0;const t=[...a].sort((x,y)=>x-y),h=t.length>>1;return t.length%2?t[h]:(t[h-1]+t[h])/2}
-function insights(A,charges){
+function insights(A,charges,opt){
   const R=A.R,S=A.stats;
   const sum=a=>a.reduce((x,r)=>x+r.pnl,0);
   const wr=a=>a.length?a.filter(r=>r.pnl>0).length/a.length:0;
@@ -258,13 +288,13 @@ function insights(A,charges){
   const ovn=R.filter(r=>r.flags.overnight),intr=R.filter(r=>!r.flags.overnight);
   // equity curve + max drawdown
   let eq=0;const series=days.map(d=>{eq+=A.days[d].pnl;return{date:d,cum:eq}});
-  let pk=0,pkDate=days[0]||'';
+  // fromIdx -1 means the peak was the starting balance, before the first day.
+  let pk=0,pkIdx=-1;
   const dd={amt:0,from:null,to:null,fromIdx:-1,toIdx:-1};
-  for(const s of series){
-    if(s.cum>pk){pk=s.cum;pkDate=s.date}
-    if(pk-s.cum>dd.amt){dd.amt=pk-s.cum;dd.from=pkDate;dd.to=s.date}
-  }
-  dd.fromIdx=days.indexOf(dd.from);dd.toIdx=days.indexOf(dd.to);
+  series.forEach((s,i)=>{
+    if(s.cum>pk){pk=s.cum;pkIdx=i}
+    if(pk-s.cum>dd.amt){dd.amt=pk-s.cum;dd.fromIdx=pkIdx;dd.toIdx=i;dd.from=pkIdx>=0?series[pkIdx].date:null;dd.to=s.date}
+  });
   // consecutive losing days
   let streak=0,bestStreak=0,streakFrom='';
   for(const d of days){if(A.days[d].pnl<0){if(!streak)streakFrom=d;streak++;if(streak>bestStreak)bestStreak=streak}else streak=0}
@@ -302,23 +332,22 @@ function insights(A,charges){
     (A.days[d].pnl<0?redT:grnT).push(dr[dr.length-1].ein.tod);
   }
   const am=R.filter(r=>r.ein.tod<12*60),pm=R.filter(r=>r.ein.tod>=12*60);
-  const lastH=R.filter(r=>r.ein.tod>=14*60);
   let best=null,worst=null;
   for(const d of days){const p=A.days[d].pnl;if(!best||p>best.pnl)best={date:d,pnl:p};if(!worst||p<worst.pnl)worst={date:d,pnl:p}}
   // bullets (priority order, capped at 4)
   const bl=[];
   if(tilt[0].n>=5&&tilt[3].n>=5&&tilt[0].win-tilt[3].win>0.15)
-    bl.push('Your first trades of the day win '+(tilt[0].win*100).toFixed(0)+'% and are '+money(tilt[0].pnl,true)+'. After three losses the same day you win '+(tilt[3].win*100).toFixed(0)+'% and are '+money(tilt[3].pnl,true)+' — consider stopping after two losing trades.');
+    bl.push('Your first trades of the day win '+(tilt[0].win*100).toFixed(0)+'% and are '+money(tilt[0].pnl,true)+'. After three or more losses already closed the same day you win'+(tilt[3].win*100).toFixed(0)+'% and are '+money(tilt[3].pnl,true)+' — consider stopping after two losing trades.');
   if(ovn.length>=3&&intr.length>=5&&sum(ovn)<0&&sum(intr)>0)
     bl.push('Your '+intr.length+' intraday trades are '+money(sum(intr),true)+' at a '+(wr(intr)*100).toFixed(0)+'% win rate. Your '+ovn.length+' overnight trades are '+money(sum(ovn),true)+' at '+(wr(ovn)*100).toFixed(0)+'% — consider not carrying positions home.');
   if(A.rules.slow.count>=3&&A.rules.slow.pnl<0)
-    bl.push('Winners are out in a median '+mins(S.holdWin)+'; losers sat '+mins(S.holdLoss)+'. Holding past your limit has cost '+money(A.rules.slow.pnl,true)+(Math.abs(A.rules.slow.pnl)>S.gross?' — more than everything you’ve made.':'.'));
+    bl.push('Winners are out in a median '+mins(S.holdWin)+'; losers sat '+mins(S.holdLoss)+'. Holding past your limit has cost '+money(A.rules.slow.pnl,true)+(S.gross>0&&Math.abs(A.rules.slow.pnl)>S.gross?' — more than everything you’ve made.':'.'));
   if(S.gross>0&&top3Sum/S.gross>0.4)
     bl.push('Your 3 best trades are '+money(top3Sum)+' of your '+money(S.gross)+' profit — one bad week could erase most of it.');
   if(redT.length>=3&&grnT.length>=3&&avgOf(redT)>avgOf(grnT)+30)
     bl.push('On losing days you keep re-entering until about '+hhmm(avgOf(redT))+'; on winning days you stop by '+hhmm(avgOf(grnT))+'.');
-  if(lastH.length>=3&&sum(lastH)<0)
-    bl.push('Trades opened after 14:00 are down '+money(-sum(lastH))+' across '+lastH.length+' trades — your cutoff is there for a reason.');
+  if(A.rules.late.count>=3&&A.rules.late.pnl<0)
+    bl.push('Trades opened after your '+hhmm(opt.cutoff)+' cutoff are down '+money(-A.rules.late.pnl)+' across '+A.rules.late.count+' trades.');
   if(am.length>=5&&pm.length>=5&&sum(am)>0&&sum(pm)<sum(am)*0.25)
     bl.push('Nearly all your profit came before noon ('+money(sum(am),true)+' on '+am.length+' trades); the afternoon added '+money(sum(pm),true)+' on '+pm.length+'.');
   const bullets=bl.slice(0,4);
@@ -327,13 +356,18 @@ function insights(A,charges){
   let verdict='You’re '+(headline>=0?'up':'down')+' '+money(Math.abs(headline))+' across '+S.n+' closed trades. ';
   if(required>0)verdict+='At this payoff you need '+required.toFixed(0)+'% wins to break even and you’re at '+(S.winRate*100).toFixed(0)+'%. ';
   if(S.n<30)verdict+='That’s a small sample — treat everything here as a sketch, not a verdict.';
-  else if(Math.abs(S.t)<1)verdict+='That edge still sits inside the range luck could explain'+(need?', and at this pace you’d need about '+need.toLocaleString('en-IN')+' similar trades to be confident.':'.');
-  else if(Math.abs(S.t)<2)verdict+='Some signal, but not yet convincing'+(need?', roughly '+need.toLocaleString('en-IN')+' similar trades would settle it.':'.');
-  else verdict+='By this sample’s standards, that’s a statistically solid edge.';
+  else if(Math.abs(S.t)<1)verdict+=S.t>=0
+    ?'That edge still sits inside the range luck could explain'+(need?', and at this pace you’d need about '+need.toLocaleString('en-IN')+' similar trades to be confident.':'.')
+    :'That loss still sits inside the range luck could explain, so it isn’t yet a proven pattern.';
+  else if(Math.abs(S.t)<2)verdict+=S.t>0
+    ?'Some signal, but not yet convincing'+(need?', roughly '+need.toLocaleString('en-IN')+' similar trades would settle it.':'.')
+    :'Some sign that you lose money on average, but not enough yet to be sure.';
+  else verdict+=S.t>0
+    ?'By this sample’s standards, that’s a statistically solid edge.'
+    :'This is a statistically reliable loss: on this sample it is unlikely to be bad luck.';
   return {days,series,dd,streak:bestStreak,streakFrom,need,required,top3Sum,leak,tilt,reentry,
     red:{n:redT.length,avg:redT.length?avgOf(redT):0},grn:{n:grnT.length,avg:grnT.length?avgOf(grnT):0},
     am:{n:am.length,pnl:sum(am)},pm:{n:pm.length,pnl:sum(pm)},
-    lastHours:{n:lastH.length,pnl:sum(lastH)},
     ovn:{n:ovn.length,pnl:sum(ovn),win:wr(ovn)},intr:{n:intr.length,pnl:sum(intr),win:wr(intr)},
     best,worst,headline,verdict,bullets};
 }
@@ -372,7 +406,7 @@ function barChart(items,fmtLabel){
   const hasNeg=items.some(i=>i.value<0),hasPos=items.some(i=>i.value>0);
   const plotH=H-top-bot;
   const zero=hasNeg&&hasPos?top+plotH/2:(hasNeg?top:top+plotH);
-  const scale=(hasNeg&&hasPos?plotH/2:plotH)/max;
+  const scale=(hasNeg&&hasPos?plotH/2-14:plotH-14)/max; // leave room for the value labels
   const bw=Math.min(46,(W-pad*2)/items.length*0.62),step=(W-pad*2)/items.length;
   let g='<line x1="0" x2="'+W+'" y1="'+zero+'" y2="'+zero+'" stroke="var(--line)"/>';
   items.forEach((it,i)=>{
@@ -414,8 +448,8 @@ function equityChart(series,dd){
   const area=path+'L'+X(n-1).toFixed(1)+' '+zero.toFixed(1)+'L'+X(0).toFixed(1)+' '+zero.toFixed(1)+'Z';
   let g='<path d="'+area+'" fill="var(--accent-soft)"/>';
   g+='<line x1="'+padL+'" x2="'+(W-padR)+'" y1="'+zero.toFixed(1)+'" y2="'+zero.toFixed(1)+'" stroke="var(--line)"/>';
-  if(dd&&dd.amt>0&&dd.fromIdx>=0&&dd.toIdx>dd.fromIdx){
-    const x1=X(dd.fromIdx),y1=Y(series[dd.fromIdx].cum),x2=X(dd.toIdx),y2=Y(series[dd.toIdx].cum);
+  if(dd&&dd.amt>0&&dd.toIdx>dd.fromIdx){
+    const x1=X(Math.max(dd.fromIdx,0)),y1=Y(dd.fromIdx>=0?series[dd.fromIdx].cum:0),x2=X(dd.toIdx),y2=Y(series[dd.toIdx].cum);
     g+='<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="var(--loss)" stroke-width="1.5" stroke-dasharray="4 3"/>';
     g+='<text x="'+((x1+x2)/2).toFixed(1)+'" y="'+(Math.max(y1,y2)+14).toFixed(1)+'" text-anchor="middle" style="fill:var(--loss)">−'+k(dd.amt)+' dip</text>';
   }
@@ -433,16 +467,25 @@ const RULE_DEFS={
   overnight:{label:'Held overnight',desc:'Bought on one day, sold on another.',fix:'Consider closing every position before the final hour — this is where your account leaks.'},
   avgdown:{label:'Added to a losing position',desc:'Bought at a worse price than a lot you already held in the same contract.',fix:'Decide your add level before the trade, or don’t add at all.'},
   late:{label:'Late entry',desc:'New position opened after your cutoff time.',fix:'No entries after your cutoff — the last hour is where your account leaks.'},
-  slow:{label:'Loser held too long',desc:'Closed at a loss after more than your exit time.',fix:'Cut losers on the clock, not on hope — your winners here exit in minutes.'},
+  slow:{label:'Loser held too long',desc:'Closed at a loss after more than your exit time (market hours only).',fix:'Cut losers on the clock, not on hope. Set the exit time and stick to it.'},
   afterLimit:{label:'Traded past the loss limit',desc:'Opened a new position after the day’s realized loss had reached your limit.',fix:'When the limit is gone, the terminal closes. That rule exists to save you.'},
-  chase:{label:'Chasing after losses',desc:'New position opened after two losing trades on the same day.',fix:'After two losing trades, stop for the day. This is where your account leaks.'}
+  chase:{label:'Chasing after losses',desc:'New position opened after two losing trades had already closed the same day.',fix:'After two losing trades, stop for the day. This is where your account leaks.'}
 };
+function openWarning(A){
+  if(!A.open.length)return '';
+  const by={};
+  for(const l of A.open){const b=by[l.sym]||(by[l.sym]={q:0,side:l.side});b.q+=l.q}
+  const syms=Object.keys(by);
+  const shown=syms.slice(0,4).map(s=>esc(s)+' ('+(by[s].side===1?'long ':'short ')+by[s].q+')').join(', ')+(syms.length>4?' and '+(syms.length-4)+' more':'');
+  return '<section><p class="warn"><b>'+syms.length+' contract'+(syms.length>1?'s':'')+' not closed inside this file</b><span>'+shown+'. Their profit or loss is not in any number below. An option that expired worthless usually has no closing trade in the tradebook, so that loss would be missing. If the file starts after you opened a position, its first sell shows up here as a short.</span></p></section>';
+}
 let LAST_REPORT='';
 function buildReport(A,I,ruleRows,charges){
   const S=A.stats,L=[];
   L.push('Tradebook Analyzer — '+(IS_SAMPLE?'sample data':FILENAME));
   L.push('Period '+(I.days[0]||'–')+' to '+(I.days[I.days.length-1]||'')+' · '+FILLS.length+' fills · '+S.n+' closed trades');
   L.push('Gross '+money(S.gross,true)+(charges>0?' · charges '+money(charges)+' · net '+money(S.gross-charges,true):' (before charges)'));
+  if(A.open.length)L.push('Not closed in this file (left out of every number): '+new Set(A.open.map(l=>l.sym)).size+' contracts');
   L.push('Win rate '+(S.winRate*100).toFixed(0)+'% ('+S.wins+'W/'+S.losses+'L) · payoff '+S.payoff.toFixed(2)+' · avg win '+money(S.avgWin)+' / avg loss '+money(S.avgLoss));
   L.push('Per trade '+money(S.expectancy,true)+' · t-stat '+S.t.toFixed(2)+(I.need?' · ~'+I.need.toLocaleString('en-IN')+' trades needed for confidence':''));
   L.push('');
@@ -454,7 +497,7 @@ function buildReport(A,I,ruleRows,charges){
     for(const r of ruleRows)L.push('  '+r.label+': '+r.count+' trades, '+money(r.pnl,true));
   }
   L.push('');
-  L.push('Daily P&L:');
+  L.push('Daily P&L (by the day each trade closed):');
   L.push('  '+I.days.map(d=>d.slice(8)+'/'+d.slice(5,7)+' '+Math.round(A.days[d].pnl)).join(' · '));
   return L.join('\n');
 }
@@ -473,7 +516,12 @@ function render(){
   let A;
   try{A=analyze(FILLS,opts())}catch(e){$('status').textContent=e.message;$('status').className='status err';return}
   const S=A.stats,o=opts(),charges=+$('charges').value||0;
-  const I=insights(A,charges);
+  const openWarn=openWarning(A);
+  if(!S.n){
+    $('out').innerHTML='<section><p class="nag">No completed round trips found. A round trip needs a buy and a later sell (or the reverse) of the same contract inside this file.</p></section>'+openWarn;
+    LAST_REPORT='';return;
+  }
+  const I=insights(A,charges,o);
   const rt=A.R;
   const src=IS_SAMPLE?'<span class="sample">Sample data</span> <span class="status">24 made-up fills so you can see how the report reads.</span>'
     :'<span class="status">'+esc(FILENAME)+' &middot; '+FILLS.length+' fills &middot; '+S.n+' closed trades</span>';
@@ -490,11 +538,11 @@ function render(){
   // 2. Biggest leak card
   let leak='';
   if(I.leak){
-    const d=RULE_DEFS[I.leak],r=A.rules[I.leak],pos=r.pnl>=0;
-    leak='<section class="leak '+(pos?'ok':'bad')+'">'+
-      '<span class="k">'+(pos?'YOUR BEST HABIT THIS PERIOD':'YOUR BIGGEST LEAK')+'</span>'+
-      '<h2>'+d.label+' &middot; <span class="'+cls(r.pnl)+'">'+money(r.pnl,true)+'</span> across '+r.count+' trades</h2>'+
-      '<p>'+esc(pos?HEDGE:d.fix)+'</p></section>';
+    const d=RULE_DEFS[I.leak],r=A.rules[I.leak];
+    leak='<section class="leak bad">'+
+      '<span class="k">YOUR BIGGEST LEAK</span>'+
+      '<h2>'+d.label+' &middot; <span class="loss">'+money(r.pnl,true)+'</span> across '+r.count+' trades</h2>'+
+      '<p>'+esc(d.fix)+'</p></section>';
   }
 
   // 3. How you trade (behaviour)
@@ -503,31 +551,49 @@ function render(){
   const chasePnl=I.tilt[2].pnl+t3.pnl;
   const tiltItems=I.tilt.map(t=>({label:t.label==='1'?'1 loss':t.label+' losses',value:t.win*100,top:(t.win*100).toFixed(0)+'%',sub:t.n,color:'var(--'+(t.pnl>=0?'gain':'loss')+')'}));
   const tiltSay=tiltOk
-    ?'Your first-of-day trades win '+(t0.win*100).toFixed(0)+'% and are '+money(t0.pnl,true)+'. After three losses on the same day that collapses to '+(t3.win*100).toFixed(0)+'% and '+money(t3.pnl,true)+'.'
+    ?'Your first trades of the day win '+(t0.win*100).toFixed(0)+'% and are '+money(t0.pnl,true)+'. After three or more losses already closed that day, trades win '+(t3.win*100).toFixed(0)+'% and are '+money(t3.pnl,true)+'. '+
+      (t0.win-t3.win>0.15?'Your win rate falls as losses stack, which is the tilt pattern.':t3.win-t0.win>0.15?'No sign of tilt here: your win rate does not fall after losses.':'Not much difference between the two.')+
+      (Math.min(t0.n,t3.n)<30?' Groups this small can swing a lot, so check the n= under each bar.':'')
     :'Too few trades in the later buckets to read this yet — the shape appears once you have a month or two of data.';
-  const tiltAct=tiltOk&&chasePnl<0?'<p class="action">Consider a hard stop after two losing trades — on this data it would have avoided '+money(-chasePnl)+'.</p>':'';
+  const tiltAct=tiltOk&&chasePnl<0?'<p class="action">Consider a hard stop after two losing trades — on this data it would have saved '+money(-chasePnl)+'.</p>':'';
   const s0=I.tilt[0],s1=I.tilt[1],s2=I.tilt[2];
   const sizeOk=s1.n>=5&&s2.n>=5&&s0.medSize>0&&s1.medSize>0&&s2.medSize>0;
-  const sizeSay=sizeOk&&s2.medSize>s0.medSize
-    ?'<p class="measured">Median entry '+money(s0.medSize)+' &rarr; '+money(s1.medSize)+' &rarr; '+money(s2.medSize)+' as the day’s losses stack</p><p class="bbody">Bigger bets after a loss are the classic break-even trap: you’re trading the P&amp;L now, not the setup.</p><p class="action">Size down, not up, after a red trade.</p>'
-    :'<p class="bbody">Not enough trades after multiple losses yet to read a size pattern.</p>';
+  const sizeLine='<p class="measured">Median entry '+money(s0.medSize)+' &rarr; '+money(s1.medSize)+' &rarr; '+money(s2.medSize)+' as the day’s losses stack</p>';
+  const sizeSay=!sizeOk
+    ?'<p class="bbody">Not enough trades after multiple losses yet to read a size pattern.</p>'
+    :s2.medSize>s0.medSize*1.1
+      ?sizeLine+'<p class="bbody">Bigger bets after a loss are the classic break-even trap: you’re trading the P&amp;L now, not the setup.</p><p class="action">Size down, not up, after a red trade.</p>'
+      :sizeLine+'<p class="bbody">Your entries don’t get bigger as the day’s losses stack, so no sign of size creep here.</p>';
   const rl=I.reentry.loss,rw=I.reentry.win;
   const reOk=rl.n>=5&&rw.n>=5&&rw.gap>0&&rw.size>0;
+  const reBig=reOk?(rl.size/rw.size-1)*100:0;
+  const reFast=reOk&&rl.gap<rw.gap*0.9,reBigger=reBig>10;
   const reSay=reOk
-    ?'<p class="measured">'+Math.round(rl.gap)+' min after a loss vs '+Math.round(rw.gap)+' min after a win &middot; '+Math.round((rl.size/rw.size-1)*100)+'% bigger</p><p class="bbody">The quick, oversized re-entry is the break-even trade — the chart barely moved, your mood did.</p><p class="action">If you wouldn’t take the trade with a flat day, skip it.</p>'
+    ?'<p class="measured">'+Math.round(rl.gap)+' min after a loss vs '+Math.round(rw.gap)+' min after a win &middot; '+Math.round(Math.abs(reBig))+'% '+(reBig>=0?'bigger':'smaller')+'</p>'+
+      (reFast&&reBigger
+        ?'<p class="bbody">The quick, oversized re-entry is the break-even trade — the chart barely moved, your mood did.</p><p class="action">If you wouldn’t take the trade with a flat day, skip it.</p>'
+        :reFast||reBigger
+          ?'<p class="bbody">Only half of the revenge-trade pattern shows up ('+(reFast?'faster':'bigger')+' after a loss, not both). Worth watching.</p>'
+          :'<p class="bbody">No sign of revenge trading here: you don’t come back faster or bigger after a loss.</p>')
     :'<p class="bbody">Too few quick re-entries after losses in this sample to read a pattern.</p>';
   const redOk=I.red.n>=3&&I.grn.n>=3;
+  const redGap=I.red.avg-I.grn.avg;
   const redSay=redOk
-    ?'<p class="measured">Last entry '+hhmm(I.red.avg)+' on losing days vs '+hhmm(I.grn.avg)+' on winning days</p><p class="bbody">On good days you stop; on bad days you keep going back for it.</p><p class="action">Pick a last-entry time for red days — or just call it after the second loss.</p>'
+    ?'<p class="measured">Last entry '+hhmm(I.red.avg)+' on losing days vs '+hhmm(I.grn.avg)+' on winning days</p>'+
+      (redGap>30
+        ?'<p class="bbody">On good days you stop; on bad days you keep going back for it.</p><p class="action">Pick a last-entry time for red days — or just call it after the second loss.</p>'
+        :redGap<-30
+          ?'<p class="bbody">The opposite of overtrading: you stop earlier on losing days than on winning ones.</p>'
+          :'<p class="bbody">Little difference: you stop at about the same time whether the day is red or green.</p>')
     :'<p class="bbody">Needs a few more red and green days to compare.</p>';
   const maOk=I.am.n>=5&&I.pm.n>=5;
   const maSay=maOk
-    ?'<p class="measured">Before noon '+money(I.am.pnl,true)+' ('+I.am.n+' trades) &middot; after '+money(I.pm.pnl,true)+' ('+I.pm.n+')</p><p class="bbody">'+(I.am.pnl>0&&I.pm.pnl<I.am.pnl*0.25?'Nearly all of your profit came before noon — the afternoon is busy but pays you little.':I.am.pnl>I.pm.pnl?'Your morning session carried the month.':'Both sessions contribute, but the morning is where your edge concentrates.')+'</p>'
+    ?'<p class="measured">Before noon '+money(I.am.pnl,true)+' ('+I.am.n+' trades) &middot; after '+money(I.pm.pnl,true)+' ('+I.pm.n+')</p><p class="bbody">'+(I.am.pnl>0&&I.pm.pnl<I.am.pnl*0.25?'Nearly all of your profit came before noon — the afternoon is busy but pays you little.':I.am.pnl>I.pm.pnl?'Your morning session carried the period.':'Your afternoon trades did at least as well as your morning ones.')+'</p>'
     :'<p class="bbody">Not enough trades in each session yet to compare.</p>';
   const beh=
     '<section><h2>How you trade</h2>'+
     '<p class="note">What follows describes behaviour, not feelings — patterns that research consistently links to worse results (the disposition effect, loss-chasing, overtrading). Read them as prompts to review, not verdicts.</p>'+
-    '<div class="panel bhero"><h3>The tilt curve</h3><p class="measured">Win rate by how many losing trades you’d already taken that day</p>'+
+    '<div class="panel bhero"><h3>The tilt curve</h3><p class="measured">Win rate by how many losing trades you’d already closed that day</p>'+
       pctChart(tiltItems)+'<p class="bbody">'+tiltSay+'</p>'+tiltAct+'</div>'+
     '<div class="beh">'+
       '<div class="bcard"><h3>Bigger bets after losses</h3>'+sizeSay+'<span class="nb">n='+(s0.n+s1.n+s2.n)+' trades</span></div>'+
@@ -557,16 +623,18 @@ function render(){
   const plainT=Math.abs(S.t)<1
     ?'Not distinguishable from luck yet. With '+S.n+' trades and this much variance, results like this happen by chance more often than you’d like.'+(I.need?' At this pace you’d need about '+I.need.toLocaleString('en-IN')+' similar trades before an edge is statistically credible.':'')
     :Math.abs(S.t)<2?'Some signal, not yet convincing.'+(I.need?' Roughly '+I.need.toLocaleString('en-IN')+' similar trades would settle it.':'')
-    :'Reasonably strong signal. This sample is behaving like a real edge, though one month is still a short window.';
+    :S.t>0?'Reasonably strong signal. This sample is behaving like a real edge, though one month is still a short window.'
+    :'Strong signal that you lose money on average in this sample. That is unlikely to be chance, so it is worth fixing rather than waiting out.';
+  const payHint=I.required?(S.avgWin<-S.avgLoss?'Your average win is smaller than your average loss':'Your average win is larger than your average loss')+' — you need '+I.required.toFixed(0)+'% wins to break even':'';
   const statsSec='<section><h2>The numbers</h2><div class="stats">'+
     '<div class="stat"><span class="k">GROSS P&amp;L</span><span class="v '+cls(S.gross)+'">'+money(S.gross,true)+'</span><span class="h">'+S.n+' closed trades over '+I.days.length+' days</span></div>'+
     (charges>0?'<div class="stat"><span class="k">NET OF CHARGES</span><span class="v '+cls(net)+'">'+money(net,true)+'</span><span class="h">'+money(charges)+' charges, about '+money(S.n?charges/S.n:0)+' per trade</span></div>':'')+
     '<div class="stat wide"><span class="k">WIN RATE vs BREAK-EVEN</span><span class="v">'+(S.winRate*100).toFixed(0)+'% <span class="vs">vs '+(I.required?I.required.toFixed(0)+'% needed':'break-even')+'</span></span>'+
       '<span class="h wr"><i class="wb" style="width:'+(S.winRate*100).toFixed(0)+'%;background:var(--gain)"></i><i class="wb" style="width:'+(I.required||0).toFixed(0)+'%;background:var(--muted)"></i></span>'+
       '<span class="h">'+S.wins+' wins &middot; '+S.losses+' losses'+(scratch?' &middot; '+scratch+' scratch':'')+'</span></div>'+
-    '<div class="stat"><span class="k">WINS vs LOSSES</span><span class="v">'+money(S.avgWin)+' / '+money(S.avgLoss)+'</span><span class="h">Your average win is smaller than your average loss'+(I.required?' — you need '+(100/(1+S.payoff)).toFixed(0)+'% wins to break even':'')+'</span></div>'+
+    '<div class="stat"><span class="k">WINS vs LOSSES</span><span class="v">'+money(S.avgWin)+' / '+money(S.avgLoss)+'</span><span class="h">'+payHint+'</span></div>'+
     '<div class="stat"><span class="k">PROFIT PER TRADE</span><span class="v '+cls(S.expectancy)+'">'+money(S.expectancy,true)+'</span><span class="h">before charges</span></div>'+
-    '<div class="stat"><span class="k">TYPICAL HOLD</span><span class="v">'+mins(S.holdWin)+' / '+mins(S.holdLoss)+'</span><span class="h">winners / losers</span></div>'+
+    '<div class="stat"><span class="k">TYPICAL HOLD</span><span class="v">'+mins(S.holdWin)+' / '+mins(S.holdLoss)+'</span><span class="h">winners / losers, market hours only</span></div>'+
     '<div class="stat"><span class="k">WITHOUT YOUR 3 BEST</span><span class="v '+cls(S.gross-I.top3Sum-charges)+'">'+money(S.gross-I.top3Sum-charges,true)+'</span><span class="h">'+(charges>0?'after charges':'before charges')+' — fragility check</span></div>'+
   '</div>'+
   (charges<1?'<p class="nag">Add your total charges from your P&amp;L statement. On F&amp;O trading at this size they often run into the thousands — they can erase a large share of this profit.</p>':'')+
@@ -574,12 +642,12 @@ function render(){
 
   // 6. Charts
   const dayItems=I.days.map(d=>({label:d.slice(8)+'/'+d.slice(5,7),value:A.days[d].pnl}));
-  const hourItems=Object.keys(A.hours).map(Number).sort((a,b)=>a-b).map(h=>({label:String(h).padStart(2,'0')+'h',value:A.hours[h].pnl,n:A.hours[h].n}));
+  const hourItems=Object.keys(A.hours).map(Number).sort((a,b)=>a-b).map(h=>({label:String(h).padStart(2,'0')+'h',value:A.hours[h].pnl,sub:A.hours[h].n}));
   const chartsSec=
     '<section><h2>Equity curve</h2><div class="panel">'+equityChart(I.series,I.dd)+'</div>'+
-      '<p class="note">'+(I.dd.amt>0?'Your worst stretch gave back '+money(I.dd.amt)+' from '+I.dd.from.slice(8)+'/'+I.dd.from.slice(5,7)+' to '+I.dd.to.slice(8)+'/'+I.dd.to.slice(5,7)+'. ':'')+'Ends at '+money(I.series.length?I.series[I.series.length-1].cum:0,true)+'.</p></section>'+
+      '<p class="note">Profit is booked on the day each trade closed. '+(I.dd.amt>0?'Your worst stretch gave back '+money(I.dd.amt)+' '+(I.dd.from?'from '+I.dd.from.slice(8)+'/'+I.dd.from.slice(5,7):'from the start')+' to '+I.dd.to.slice(8)+'/'+I.dd.to.slice(5,7)+'. ':'')+'Ends at '+money(I.series.length?I.series[I.series.length-1].cum:0,true)+'.</p></section>'+
     '<section><h2>P&amp;L by day</h2><div class="panel">'+barChart(dayItems,v=>k(v))+'</div>'+
-      '<p class="note">Best day '+(I.best?I.best.date.slice(8)+'/'+I.best.date.slice(5,7)+' '+money(I.best.pnl,true):'–')+' &middot; Worst day '+(I.worst?I.worst.date.slice(8)+'/'+I.worst.date.slice(5,7)+' '+money(I.worst.pnl,true):'–')+(I.streak>1?' &middot; Longest losing streak '+I.streak+' days':'')+'</p></section>'+
+      '<p class="note">By the day each trade closed. Best day '+(I.best?I.best.date.slice(8)+'/'+I.best.date.slice(5,7)+' '+money(I.best.pnl,true):'–')+' &middot; Worst day '+(I.worst?I.worst.date.slice(8)+'/'+I.worst.date.slice(5,7)+' '+money(I.worst.pnl,true):'–')+(I.streak>1?' &middot; Longest losing streak '+I.streak+' days':'')+'</p></section>'+
     '<section><h2>P&amp;L by entry hour</h2><div class="panel">'+barChart(hourItems,v=>k(v))+'</div>'+
       '<p class="note">Each bar adds up the trades you opened in that hour, with trade counts underneath.</p></section>';
 
@@ -591,26 +659,40 @@ function render(){
     const hh=String(Math.floor(r.ein.tod/60)).padStart(2,'0')+':'+String(r.ein.tod%60).padStart(2,'0');
     return '<tr><td>'+esc(r.sym)+'<small>'+r.ein.date+' '+hh+' &middot; '+(r.side===1?'long':'short')+' '+r.q+'</small></td><td class="n">'+r.pin.toFixed(2)+' &rarr; '+r.pout.toFixed(2)+'</td><td class="n">'+mins(r.hold)+'</td><td class="n loss">'+money(r.pnl,true)+'</td><td>'+(tags||'&ndash;')+'</td></tr>';
   }).join('');
-  const worstSec='<section><h2>Ten largest losses</h2><div class="tbl"><table><thead><tr><th>Contract</th><th class="n">Price move</th><th class="n">Time in trade</th><th class="n">Lost</th><th>What went wrong</th></tr></thead><tbody>'+worstRows+'</tbody></table></div></section>';
+  const worstSec='<section><h2>Ten largest losses</h2><div class="tbl"><table><thead><tr><th>Contract</th><th class="n">Price move</th><th class="n">Time held (market hrs)</th><th class="n">Lost</th><th>What went wrong</th></tr></thead><tbody>'+worstRows+'</tbody></table></div></section>';
 
-  $('out').innerHTML='<section>'+src+'</section>'+verdict+leak+beh+rulesSec+statsSec+chartsSec+worstSec;
+  $('out').innerHTML='<section>'+src+'</section>'+openWarn+verdict+leak+beh+rulesSec+statsSec+chartsSec+worstSec;
   LAST_REPORT=buildReport(A,I,ruleRows,charges);
   const cb=$('copy');
   if(cb)cb.onclick=()=>copyText(LAST_REPORT,cb);
 }
 function load(file){
+  const isCsv=/\.csv$/i.test(file.name);
   const rd=new FileReader();
   rd.onload=e=>{
     try{
-      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
-      const ws=wb.Sheets[wb.SheetNames.find(n=>/f&?o/i.test(n))||wb.SheetNames[0]];
-      const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
-      FILLS=fillsFromRows(rows);IS_SAMPLE=false;FILENAME=file.name;
+      let fills;
+      if(isCsv){
+        fills=fillsFromRows(parseCsv(String(e.target.result)));
+      }else{
+        if(typeof XLSX==='undefined')throw new Error('The Excel reader did not load (it comes from cdnjs, so it needs an internet connection). A .csv export will work without it.');
+        const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+        // Try the F&O sheet first, then any other sheet, and report the first error if none works.
+        const pref=n=>/^f\s*&?\s*o$/i.test(n.trim())?0:1;
+        const names=[...wb.SheetNames].sort((a,b)=>pref(a)-pref(b));
+        let firstErr=null;
+        for(const n of names){
+          try{fills=fillsFromRows(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null}));break}
+          catch(err){firstErr=firstErr||err}
+        }
+        if(!fills)throw firstErr||new Error('Could not read that file.');
+      }
+      FILLS=fills;IS_SAMPLE=false;FILENAME=file.name;
       $('status').textContent='Loaded '+file.name;$('status').className='status';render();
     }catch(err){$('out').innerHTML='';$('status').textContent=err.message||'Could not read that file.';$('status').className='status err'}
   };
   $('status').textContent='Reading '+file.name+'…';$('status').className='status';
-  rd.readAsArrayBuffer(file);
+  if(isCsv)rd.readAsText(file);else rd.readAsArrayBuffer(file);
 }
 $('file').addEventListener('change',e=>{if(e.target.files[0])load(e.target.files[0])});
 const dz=$('drop');
