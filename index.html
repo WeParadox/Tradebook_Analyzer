@@ -58,10 +58,6 @@ label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mu
 label.f input{font:inherit;font-family:var(--font-mono);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;min-width:0}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:560px){.split{grid-template-columns:1fr}}
-.verdict{border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
-.verdict.ok{background:var(--gain-soft)} .verdict.bad{background:var(--loss-soft)}
-.verdict .big{font-family:var(--font-mono);font-size:26px;font-weight:500;font-variant-numeric:tabular-nums}
-.verdict .lab{font-size:13px;color:var(--muted)}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
 .stat{padding:12px 14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 -1px -1px 0;display:flex;flex-direction:column;gap:2px;min-width:0}
 .stat .k{font-size:12px;color:var(--muted);letter-spacing:.03em}
@@ -79,6 +75,54 @@ td small{display:block;color:var(--muted);font-size:12px}
 svg.chart{width:100%;height:auto;display:block}
 svg text{fill:var(--muted);font-family:var(--font-mono);font-size:11px}
 .sig{white-space:nowrap}
+/* Verdict card */
+.vc{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.vc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.vc-top .k{display:block;font-size:12px;color:var(--muted);letter-spacing:.03em}
+.vc .big{font-family:var(--font-mono);font-size:34px;font-weight:500;font-variant-numeric:tabular-nums;display:block;line-height:1.1}
+.vc-say{font-size:16px;line-height:1.45}
+.bullets{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.bullets li{font-size:14px;line-height:1.45}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.btn.copied{background:var(--gain);color:#fff;border-color:transparent}
+:root[data-theme="dark"] .btn.ghost{color:var(--accent)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn.ghost{color:var(--accent)}}
+/* Leak card */
+.leak{border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.leak.bad{background:var(--loss-soft)} .leak.ok{background:var(--gain-soft)}
+.leak .k{font-size:12px;font-weight:600;letter-spacing:.05em;color:var(--muted)}
+.leak h2{font-size:16px;margin:0}
+.leak p{font-size:13px;color:var(--muted)}
+/* Ranked rule list */
+.rank{display:flex;flex-direction:column;gap:5px;padding:11px 0;border-bottom:1px solid var(--line)}
+.rank:last-child{border-bottom:0}
+.rank-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.rank-name{font-weight:600;font-size:14px}
+.rank-name small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.rank-pnl{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:500;white-space:nowrap}
+.rank-bar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.rank-bar i{display:block;height:100%;border-radius:3px}
+.rank-meta{font-size:12px;color:var(--muted)}
+.rank-fix{font-size:13px}
+/* Behaviour cards */
+.bhero{display:flex;flex-direction:column;gap:8px}
+.bhero h3,.bcard h3{font-family:var(--font-display);font-size:15px;margin:0;font-weight:650}
+.beh{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.bcard{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 14px 28px;display:flex;flex-direction:column;gap:6px;position:relative}
+.measured{font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums}
+.bbody{font-size:13px;color:var(--muted)}
+.action{font-size:13px;font-weight:600;margin:0}
+.nb{position:absolute;bottom:8px;right:10px;font-size:11px;color:var(--muted);font-family:var(--font-mono)}
+/* Stats extras */
+.stat.wide{grid-column:span 2}
+@media(max-width:560px){.stat.wide{grid-column:span 1}}
+.stat .vs{font-size:13px;color:var(--muted);font-weight:400}
+.h.wr{display:flex;flex-direction:column;gap:3px;margin:2px 0}
+.wb{display:block;height:7px;border-radius:3px;min-width:2px}
+.nag{font-size:13px;color:var(--loss);background:var(--loss-soft);border-radius:4px;padding:8px 10px;margin:0}
+.disc{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:10px 14px}
+.disc summary{cursor:pointer;font-weight:600;font-size:14px}
+.disc p{margin:8px 0 0;font-size:13px;color:var(--muted);max-width:70ch}
 </style>
 
 </head>
@@ -143,6 +187,8 @@ function analyze(fills,opt){
     }
   }
   R.sort((a,b)=>a.ein.min-b.ein.min);
+  const pd={};
+  for(const r of R){const d=r.ein.date,c=pd[d]||0;r.priorLosses=c;if(r.pnl<0)pd[d]=c+1}
   for(const r of R){
     let realized=0;
     for(const o of R){if(o!==r&&o.eout.date===r.ein.date&&o.eout.min<=r.ein.min)realized+=o.pnl}
@@ -151,7 +197,8 @@ function analyze(fills,opt){
       avgdown:!!r.avgdown,
       late:r.ein.tod>opt.cutoff,
       slow:r.pnl<0&&r.hold>opt.slow,
-      afterLimit:opt.limit>0&&realized<=-opt.limit
+      afterLimit:opt.limit>0&&realized<=-opt.limit,
+      chase:r.priorLosses>=2
     };
     r.any=Object.values(r.flags).some(Boolean);
   }
@@ -164,7 +211,7 @@ function analyze(fills,opt){
     expectancy:m,t:s&&n>1?m/(s/Math.sqrt(n)):0,
     holdWin:median(W.map(r=>r.hold)),holdLoss:median(L.map(r=>r.hold)),
     grossNoBest3:gross-sorted.slice(0,3).reduce((a,b)=>a+b,0)};
-  const keys=['overnight','avgdown','late','slow','afterLimit'];
+  const keys=['overnight','avgdown','late','slow','afterLimit','chase'];
   const rules={};
   for(const k of keys){const fl=R.filter(r=>r.flags[k]);const p=fl.reduce((a,r)=>a+r.pnl,0);rules[k]={count:fl.length,pnl:p,avg:fl.length?p/fl.length:0,without:gross-p}}
   const clean=R.filter(r=>!r.any),dirty=R.filter(r=>r.any);
@@ -200,6 +247,98 @@ function fillsFromRows(rows){
 }
 // ==END==
 
+// ==INSIGHTS==
+function avgOf(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0}
+function medOf(a){if(!a.length)return 0;const t=[...a].sort((x,y)=>x-y),h=t.length>>1;return t.length%2?t[h]:(t[h-1]+t[h])/2}
+function insights(A,charges){
+  const R=A.R,S=A.stats;
+  const sum=a=>a.reduce((x,r)=>x+r.pnl,0);
+  const wr=a=>a.length?a.filter(r=>r.pnl>0).length/a.length:0;
+  const days=Object.keys(A.days).sort();
+  const ovn=R.filter(r=>r.flags.overnight),intr=R.filter(r=>!r.flags.overnight);
+  // equity curve + max drawdown
+  let eq=0;const series=days.map(d=>{eq+=A.days[d].pnl;return{date:d,cum:eq}});
+  let pk=0,pkDate=days[0]||'';
+  const dd={amt:0,from:null,to:null,fromIdx:-1,toIdx:-1};
+  for(const s of series){
+    if(s.cum>pk){pk=s.cum;pkDate=s.date}
+    if(pk-s.cum>dd.amt){dd.amt=pk-s.cum;dd.from=pkDate;dd.to=s.date}
+  }
+  dd.fromIdx=days.indexOf(dd.from);dd.toIdx=days.indexOf(dd.to);
+  // consecutive losing days
+  let streak=0,bestStreak=0,streakFrom='';
+  for(const d of days){if(A.days[d].pnl<0){if(!streak)streakFrom=d;streak++;if(streak>bestStreak)bestStreak=streak}else streak=0}
+  // edge sample size
+  const pnls=R.map(r=>r.pnl),m=mean(pnls),s=sd(pnls);
+  const need=(m>0&&s>0&&R.length>1)?Math.ceil((2*s/m)*(2*s/m)):0;
+  const required=S.payoff>0?100/(1+S.payoff):0;
+  const top3Sum=sum([...R].sort((a,b)=>b.pnl-a.pnl).slice(0,3));
+  // biggest leak rule
+  let leak=null;
+  for(const k in A.rules){if(A.rules[k].count>0&&(leak===null||A.rules[k].pnl<A.rules[leak].pnl))leak=k}
+  if(leak!==null&&A.rules[leak].pnl>=0)leak=null;
+  // tilt curve: win rate by losses already taken that day
+  const tilt=[0,1,2,3].map(b=>{
+    const g=R.filter(r=>Math.min(r.priorLosses,3)===b);
+    return{label:b<3?String(b):'3+',n:g.length,pnl:sum(g),win:wr(g),medSize:medOf(g.map(r=>r.q*r.pin))};
+  });
+  // re-entry speed after a loss vs after a win (entries <=30m after prior exit)
+  const byExit=[...R].sort((a,b)=>a.eout.min-b.eout.min);
+  const reLoss=[],reWin=[];
+  for(const r of R){
+    let p=null;
+    for(const o of byExit){if(o.eout.min<=r.ein.min&&(!p||o.eout.min>p.eout.min))p=o}
+    if(!p||r.ein.min-p.eout.min>30)continue;
+    const ob={gap:r.ein.min-p.eout.min,size:r.q*r.pin};
+    if(p.pnl<0)reLoss.push(ob);else if(p.pnl>0)reWin.push(ob);
+  }
+  const reentry={loss:{n:reLoss.length,gap:medOf(reLoss.map(x=>x.gap)),size:medOf(reLoss.map(x=>x.size))},
+                 win:{n:reWin.length,gap:medOf(reWin.map(x=>x.gap)),size:medOf(reWin.map(x=>x.size))}};
+  // last entry time on red vs green days
+  const redT=[],grnT=[];
+  for(const d of days){
+    const dr=R.filter(r=>r.ein.date===d).sort((a,b)=>a.ein.min-b.ein.min);
+    if(!dr.length)continue;
+    (A.days[d].pnl<0?redT:grnT).push(dr[dr.length-1].ein.tod);
+  }
+  const am=R.filter(r=>r.ein.tod<12*60),pm=R.filter(r=>r.ein.tod>=12*60);
+  const lastH=R.filter(r=>r.ein.tod>=14*60);
+  let best=null,worst=null;
+  for(const d of days){const p=A.days[d].pnl;if(!best||p>best.pnl)best={date:d,pnl:p};if(!worst||p<worst.pnl)worst={date:d,pnl:p}}
+  // bullets (priority order, capped at 4)
+  const bl=[];
+  if(tilt[0].n>=5&&tilt[3].n>=5&&tilt[0].win-tilt[3].win>0.15)
+    bl.push('Your first trades of the day win '+(tilt[0].win*100).toFixed(0)+'% and are '+money(tilt[0].pnl,true)+'. After three losses the same day you win '+(tilt[3].win*100).toFixed(0)+'% and are '+money(tilt[3].pnl,true)+' — consider stopping after two losing trades.');
+  if(ovn.length>=3&&intr.length>=5&&sum(ovn)<0&&sum(intr)>0)
+    bl.push('Your '+intr.length+' intraday trades are '+money(sum(intr),true)+' at a '+(wr(intr)*100).toFixed(0)+'% win rate. Your '+ovn.length+' overnight trades are '+money(sum(ovn),true)+' at '+(wr(ovn)*100).toFixed(0)+'% — consider not carrying positions home.');
+  if(A.rules.slow.count>=3&&A.rules.slow.pnl<0)
+    bl.push('Winners are out in a median '+mins(S.holdWin)+'; losers sat '+mins(S.holdLoss)+'. Holding past your limit has cost '+money(A.rules.slow.pnl,true)+(Math.abs(A.rules.slow.pnl)>S.gross?' — more than everything you’ve made.':'.'));
+  if(S.gross>0&&top3Sum/S.gross>0.4)
+    bl.push('Your 3 best trades are '+money(top3Sum)+' of your '+money(S.gross)+' profit — one bad week could erase most of it.');
+  if(redT.length>=3&&grnT.length>=3&&avgOf(redT)>avgOf(grnT)+30)
+    bl.push('On losing days you keep re-entering until about '+hhmm(avgOf(redT))+'; on winning days you stop by '+hhmm(avgOf(grnT))+'.');
+  if(lastH.length>=3&&sum(lastH)<0)
+    bl.push('Trades opened after 14:00 are down '+money(-sum(lastH))+' across '+lastH.length+' trades — your cutoff is there for a reason.');
+  if(am.length>=5&&pm.length>=5&&sum(am)>0&&sum(pm)<sum(am)*0.25)
+    bl.push('Nearly all your profit came before noon ('+money(sum(am),true)+' on '+am.length+' trades); the afternoon added '+money(sum(pm),true)+' on '+pm.length+'.');
+  const bullets=bl.slice(0,4);
+  // verdict sentence
+  const headline=charges>0?S.gross-charges:S.gross;
+  let verdict='You’re '+(headline>=0?'up':'down')+' '+money(Math.abs(headline))+' across '+S.n+' closed trades. ';
+  if(required>0)verdict+='At this payoff you need '+required.toFixed(0)+'% wins to break even and you’re at '+(S.winRate*100).toFixed(0)+'%. ';
+  if(S.n<30)verdict+='That’s a small sample — treat everything here as a sketch, not a verdict.';
+  else if(Math.abs(S.t)<1)verdict+='That edge still sits inside the range luck could explain'+(need?', and at this pace you’d need about '+need.toLocaleString('en-IN')+' similar trades to be confident.':'.');
+  else if(Math.abs(S.t)<2)verdict+='Some signal, but not yet convincing'+(need?', roughly '+need.toLocaleString('en-IN')+' similar trades would settle it.':'.');
+  else verdict+='By this sample’s standards, that’s a statistically solid edge.';
+  return {days,series,dd,streak:bestStreak,streakFrom,need,required,top3Sum,leak,tilt,reentry,
+    red:{n:redT.length,avg:redT.length?avgOf(redT):0},grn:{n:grnT.length,avg:grnT.length?avgOf(grnT):0},
+    am:{n:am.length,pnl:sum(am)},pm:{n:pm.length,pnl:sum(pm)},
+    lastHours:{n:lastH.length,pnl:sum(lastH)},
+    ovn:{n:ovn.length,pnl:sum(ovn),win:wr(ovn)},intr:{n:intr.length,pnl:sum(intr),win:wr(intr)},
+    best,worst,headline,verdict,bullets};
+}
+// ==END-INSIGHTS==
+
 const SAMPLE=[
  ['NIFTY26NOV23000CE','buy',65,120,'2026-11-02T09:40:11'],['NIFTY26NOV23000CE','sell',65,155,'2026-11-02T09:58:40'],
  ['NIFTY26NOV23000PE','buy',65,110,'2026-11-02T10:20:05'],['NIFTY26NOV23000PE','sell',65,134,'2026-11-02T10:41:30'],
@@ -221,6 +360,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 function money(n,plus){const r=Math.round(n);return (r<0?'−':(plus&&r>0?'+':''))+'₹'+Math.abs(r).toLocaleString('en-IN')}
 function cls(n){return n>0?'gain':n<0?'loss':''}
 function mins(m){m=Math.round(m);if(m<60)return m+' min';const h=Math.floor(m/60);return h+' h '+(m%60)+' min'}
+function hhmm(m){const h=Math.floor(m/60),mm=Math.round(m%60);return String(h).padStart(2,'0')+':'+String(mm).padStart(2,'0')}
 function opts(){
   const [h,m]=($('cutoff').value||'14:30').split(':').map(Number);
   return {cutoff:h*60+m,slow:Math.max(1,+$('slow').value||120),limit:Math.max(0,+$('limit').value||0)};
@@ -240,60 +380,223 @@ function barChart(items,fmtLabel){
     g+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(h,1).toFixed(1)+'" fill="'+(it.value>=0?'var(--gain)':'var(--loss)')+'"/>';
     const ly=it.value>=0?y-4:y+h+12;
     g+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle">'+esc(fmtLabel(it.value))+'</text>';
-    g+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-10)+'" text-anchor="middle">'+esc(it.label)+'</text>';
+    g+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(it.sub!=null?H-18:H-10)+'" text-anchor="middle">'+esc(it.label)+'</text>';
+    if(it.sub!=null)g+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle" style="font-size:9px;opacity:.75">n='+esc(it.sub)+'</text>';
   });
   return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Bar chart of P&amp;L">'+g+'</svg>';
 }
+function pctChart(items){
+  if(!items.length) return '';
+  const W=640,H=170,top=26,bot=34,pad=10;
+  const plotH=H-top-bot;
+  const step=(W-pad*2)/items.length,bw=Math.min(64,step*0.5);
+  let g='<line x1="'+pad+'" x2="'+(W-pad)+'" y1="'+(top+plotH)+'" y2="'+(top+plotH)+'" stroke="var(--line)"/>';
+  items.forEach((it,i)=>{
+    const x=pad+step*i+(step-bw)/2;
+    const h=Math.max(0,Math.min(it.value,100))/100*plotH;
+    const y=top+plotH-h;
+    g+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(h,1).toFixed(1)+'" fill="'+it.color+'"/>';
+    g+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-6).toFixed(1)+'" text-anchor="middle">'+esc(it.top)+'</text>';
+    g+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-18)+'" text-anchor="middle">'+esc(it.label)+'</text>';
+    if(it.sub!=null)g+='<text x="'+(x+bw/2).toFixed(1)+'" y="'+(H-5)+'" text-anchor="middle" style="font-size:9px;opacity:.75">n='+esc(it.sub)+'</text>';
+  });
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Win rate by losses already taken that day">'+g+'</svg>';
+}
+function equityChart(series,dd){
+  if(!series||series.length<2) return '';
+  const W=640,H=210,padL=10,padR=10,padT=22,padB=30,n=series.length;
+  const vals=series.map(s=>s.cum);
+  const max=Math.max(...vals,0),min=Math.min(...vals,0),span=(max-min)||1;
+  const X=i=>padL+(W-padL-padR)*i/(n-1);
+  const Y=v=>padT+(H-padT-padB)*(max-v)/span;
+  const zero=Y(0);
+  let path='';series.forEach((s,i)=>{path+=(i?'L':'M')+X(i).toFixed(1)+' '+Y(s.cum).toFixed(1)});
+  const area=path+'L'+X(n-1).toFixed(1)+' '+zero.toFixed(1)+'L'+X(0).toFixed(1)+' '+zero.toFixed(1)+'Z';
+  let g='<path d="'+area+'" fill="var(--accent-soft)"/>';
+  g+='<line x1="'+padL+'" x2="'+(W-padR)+'" y1="'+zero.toFixed(1)+'" y2="'+zero.toFixed(1)+'" stroke="var(--line)"/>';
+  if(dd&&dd.amt>0&&dd.fromIdx>=0&&dd.toIdx>dd.fromIdx){
+    const x1=X(dd.fromIdx),y1=Y(series[dd.fromIdx].cum),x2=X(dd.toIdx),y2=Y(series[dd.toIdx].cum);
+    g+='<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="var(--loss)" stroke-width="1.5" stroke-dasharray="4 3"/>';
+    g+='<text x="'+((x1+x2)/2).toFixed(1)+'" y="'+(Math.max(y1,y2)+14).toFixed(1)+'" text-anchor="middle" style="fill:var(--loss)">−'+k(dd.amt)+' dip</text>';
+  }
+  g+='<path d="'+path+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>';
+  const last=series[n-1];
+  g+='<circle cx="'+X(n-1).toFixed(1)+'" cy="'+Y(last.cum).toFixed(1)+'" r="3.5" fill="'+(last.cum>=0?'var(--gain)':'var(--loss)')+'"/>';
+  g+='<text x="'+(X(n-1)-4).toFixed(1)+'" y="'+(Y(last.cum)+(last.cum>=0?-9:16)).toFixed(1)+'" text-anchor="end" style="fill:var(--'+(last.cum>=0?'gain':'loss')+')">'+money(last.cum,true)+'</text>';
+  g+='<text x="'+padL+'" y="'+(H-8)+'">'+esc(series[0].date.slice(8)+'/'+series[0].date.slice(5,7))+'</text>';
+  g+='<text x="'+(W-padR)+'" y="'+(H-8)+'" text-anchor="end">'+esc(last.date.slice(8)+'/'+last.date.slice(5,7))+'</text>';
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Cumulative profit and loss across the period">'+g+'</svg>';
+}
 function k(n){const a=Math.abs(n);return (n<0?'−':'')+(a>=1000?(a/1000).toFixed(a>=10000?0:1)+'k':Math.round(a))}
+const HEDGE='This helped this period — but that’s the kind of luck your rules shouldn’t rely on.';
+const RULE_DEFS={
+  overnight:{label:'Held overnight',desc:'Bought on one day, sold on another.',fix:'Consider closing every position before the final hour — this is where your account leaks.'},
+  avgdown:{label:'Added to a losing position',desc:'Bought at a worse price than a lot you already held in the same contract.',fix:'Decide your add level before the trade, or don’t add at all.'},
+  late:{label:'Late entry',desc:'New position opened after your cutoff time.',fix:'No entries after your cutoff — the last hour is where your account leaks.'},
+  slow:{label:'Loser held too long',desc:'Closed at a loss after more than your exit time.',fix:'Cut losers on the clock, not on hope — your winners here exit in minutes.'},
+  afterLimit:{label:'Traded past the loss limit',desc:'Opened a new position after the day’s realized loss had reached your limit.',fix:'When the limit is gone, the terminal closes. That rule exists to save you.'},
+  chase:{label:'Chasing after losses',desc:'New position opened after two losing trades on the same day.',fix:'After two losing trades, stop for the day. This is where your account leaks.'}
+};
+let LAST_REPORT='';
+function buildReport(A,I,ruleRows,charges){
+  const S=A.stats,L=[];
+  L.push('Tradebook Analyzer — '+(IS_SAMPLE?'sample data':FILENAME));
+  L.push('Period '+(I.days[0]||'–')+' to '+(I.days[I.days.length-1]||'')+' · '+FILLS.length+' fills · '+S.n+' closed trades');
+  L.push('Gross '+money(S.gross,true)+(charges>0?' · charges '+money(charges)+' · net '+money(S.gross-charges,true):' (before charges)'));
+  L.push('Win rate '+(S.winRate*100).toFixed(0)+'% ('+S.wins+'W/'+S.losses+'L) · payoff '+S.payoff.toFixed(2)+' · avg win '+money(S.avgWin)+' / avg loss '+money(S.avgLoss));
+  L.push('Per trade '+money(S.expectancy,true)+' · t-stat '+S.t.toFixed(2)+(I.need?' · ~'+I.need.toLocaleString('en-IN')+' trades needed for confidence':''));
+  L.push('');
+  L.push(I.verdict);
+  for(const b of I.bullets)L.push('- '+b);
+  if(ruleRows.length){
+    L.push('');
+    L.push('Rule costs (worst first):');
+    for(const r of ruleRows)L.push('  '+r.label+': '+r.count+' trades, '+money(r.pnl,true));
+  }
+  L.push('');
+  L.push('Daily P&L:');
+  L.push('  '+I.days.map(d=>d.slice(8)+'/'+d.slice(5,7)+' '+Math.round(A.days[d].pnl)).join(' · '));
+  return L.join('\n');
+}
+function copyText(txt,btn){
+  const done=()=>{const o=btn.textContent;btn.textContent='Copied ✓';btn.classList.add('copied');setTimeout(()=>{btn.textContent=o;btn.classList.remove('copied')},2000)};
+  const fallback=()=>{
+    const ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');done()}catch(e){}
+    document.body.removeChild(ta);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,fallback);
+  else fallback();
+}
 function render(){
   let A;
   try{A=analyze(FILLS,opts())}catch(e){$('status').textContent=e.message;$('status').className='status err';return}
   const S=A.stats,o=opts(),charges=+$('charges').value||0;
+  const I=insights(A,charges);
   const rt=A.R;
+  const src=IS_SAMPLE?'<span class="sample">Sample data</span> <span class="status">24 made-up fills so you can see how the report reads.</span>'
+    :'<span class="status">'+esc(FILENAME)+' &middot; '+FILLS.length+' fills &middot; '+S.n+' closed trades</span>';
+
+  // 1. Verdict card
+  const verdict=
+    '<section class="vc"><div class="vc-top">'+
+      '<div><span class="k">TOTAL '+(charges>0?'NET OF CHARGES':'GROSS')+'</span><span class="big '+cls(I.headline)+'">'+money(I.headline,true)+'</span></div>'+
+      '<button class="btn ghost" id="copy" type="button">Copy report</button></div>'+
+      '<p class="vc-say">'+esc(I.verdict)+'</p>'+
+      (I.bullets.length?'<ul class="bullets">'+I.bullets.map(b=>'<li>'+esc(b)+'</li>').join('')+'</ul>':'')+
+    '</section>';
+
+  // 2. Biggest leak card
+  let leak='';
+  if(I.leak){
+    const d=RULE_DEFS[I.leak],r=A.rules[I.leak],pos=r.pnl>=0;
+    leak='<section class="leak '+(pos?'ok':'bad')+'">'+
+      '<span class="k">'+(pos?'YOUR BEST HABIT THIS PERIOD':'YOUR BIGGEST LEAK')+'</span>'+
+      '<h2>'+d.label+' &middot; <span class="'+cls(r.pnl)+'">'+money(r.pnl,true)+'</span> across '+r.count+' trades</h2>'+
+      '<p>'+esc(pos?HEDGE:d.fix)+'</p></section>';
+  }
+
+  // 3. How you trade (behaviour)
+  const t0=I.tilt[0],t3=I.tilt[3];
+  const tiltOk=t0.n>=5&&t3.n>=5;
+  const chasePnl=I.tilt[2].pnl+t3.pnl;
+  const tiltItems=I.tilt.map(t=>({label:t.label==='1'?'1 loss':t.label+' losses',value:t.win*100,top:(t.win*100).toFixed(0)+'%',sub:t.n,color:'var(--'+(t.pnl>=0?'gain':'loss')+')'}));
+  const tiltSay=tiltOk
+    ?'Your first-of-day trades win '+(t0.win*100).toFixed(0)+'% and are '+money(t0.pnl,true)+'. After three losses on the same day that collapses to '+(t3.win*100).toFixed(0)+'% and '+money(t3.pnl,true)+'.'
+    :'Too few trades in the later buckets to read this yet — the shape appears once you have a month or two of data.';
+  const tiltAct=tiltOk&&chasePnl<0?'<p class="action">Consider a hard stop after two losing trades — on this data it would have avoided '+money(-chasePnl)+'.</p>':'';
+  const s0=I.tilt[0],s1=I.tilt[1],s2=I.tilt[2];
+  const sizeOk=s1.n>=5&&s2.n>=5&&s0.medSize>0&&s1.medSize>0&&s2.medSize>0;
+  const sizeSay=sizeOk&&s2.medSize>s0.medSize
+    ?'<p class="measured">Median entry '+money(s0.medSize)+' &rarr; '+money(s1.medSize)+' &rarr; '+money(s2.medSize)+' as the day’s losses stack</p><p class="bbody">Bigger bets after a loss are the classic break-even trap: you’re trading the P&amp;L now, not the setup.</p><p class="action">Size down, not up, after a red trade.</p>'
+    :'<p class="bbody">Not enough trades after multiple losses yet to read a size pattern.</p>';
+  const rl=I.reentry.loss,rw=I.reentry.win;
+  const reOk=rl.n>=5&&rw.n>=5&&rw.gap>0&&rw.size>0;
+  const reSay=reOk
+    ?'<p class="measured">'+Math.round(rl.gap)+' min after a loss vs '+Math.round(rw.gap)+' min after a win &middot; '+Math.round((rl.size/rw.size-1)*100)+'% bigger</p><p class="bbody">The quick, oversized re-entry is the break-even trade — the chart barely moved, your mood did.</p><p class="action">If you wouldn’t take the trade with a flat day, skip it.</p>'
+    :'<p class="bbody">Too few quick re-entries after losses in this sample to read a pattern.</p>';
+  const redOk=I.red.n>=3&&I.grn.n>=3;
+  const redSay=redOk
+    ?'<p class="measured">Last entry '+hhmm(I.red.avg)+' on losing days vs '+hhmm(I.grn.avg)+' on winning days</p><p class="bbody">On good days you stop; on bad days you keep going back for it.</p><p class="action">Pick a last-entry time for red days — or just call it after the second loss.</p>'
+    :'<p class="bbody">Needs a few more red and green days to compare.</p>';
+  const maOk=I.am.n>=5&&I.pm.n>=5;
+  const maSay=maOk
+    ?'<p class="measured">Before noon '+money(I.am.pnl,true)+' ('+I.am.n+' trades) &middot; after '+money(I.pm.pnl,true)+' ('+I.pm.n+')</p><p class="bbody">'+(I.am.pnl>0&&I.pm.pnl<I.am.pnl*0.25?'Nearly all of your profit came before noon — the afternoon is busy but pays you little.':I.am.pnl>I.pm.pnl?'Your morning session carried the month.':'Both sessions contribute, but the morning is where your edge concentrates.')+'</p>'
+    :'<p class="bbody">Not enough trades in each session yet to compare.</p>';
+  const beh=
+    '<section><h2>How you trade</h2>'+
+    '<p class="note">What follows describes behaviour, not feelings — patterns that research consistently links to worse results (the disposition effect, loss-chasing, overtrading). Read them as prompts to review, not verdicts.</p>'+
+    '<div class="panel bhero"><h3>The tilt curve</h3><p class="measured">Win rate by how many losing trades you’d already taken that day</p>'+
+      pctChart(tiltItems)+'<p class="bbody">'+tiltSay+'</p>'+tiltAct+'</div>'+
+    '<div class="beh">'+
+      '<div class="bcard"><h3>Bigger bets after losses</h3>'+sizeSay+'<span class="nb">n='+(s0.n+s1.n+s2.n)+' trades</span></div>'+
+      '<div class="bcard"><h3>Coming back too fast</h3>'+reSay+'<span class="nb">n='+rl.n+' after losses</span></div>'+
+      '<div class="bcard"><h3>Bad days end late</h3>'+redSay+'<span class="nb">n='+I.red.n+' red / '+I.grn.n+' green days</span></div>'+
+      '<div class="bcard"><h3>When you make your money</h3>'+maSay+'<span class="nb">n='+S.n+' trades</span></div>'+
+    '</div></section>';
+
+  // 4. Ranked rule costs
+  const ranked=Object.keys(A.rules).filter(k=>A.rules[k].count>0).sort((a,b)=>A.rules[a].pnl-A.rules[b].pnl);
+  const maxAbs=Math.max(1,...ranked.map(k=>Math.abs(A.rules[k].pnl)));
+  const ruleRows=ranked.map(k=>({label:RULE_DEFS[k].label,count:A.rules[k].count,pnl:A.rules[k].pnl}));
+  const rankHtml=ranked.map(k=>{
+    const r=A.rules[k],d=RULE_DEFS[k],pos=r.pnl>=0;
+    return '<div class="rank">'+
+      '<div class="rank-head"><span class="rank-name">'+d.label+'<small>'+d.desc+'</small></span><span class="rank-pnl '+cls(r.pnl)+'">'+money(r.pnl,true)+'</span></div>'+
+      '<div class="rank-bar"><i style="width:'+(Math.abs(r.pnl)/maxAbs*100).toFixed(0)+'%;background:var(--'+(pos?'gain':'loss')+')"></i></div>'+
+      '<div class="rank-meta">'+r.count+' trades &middot; '+(r.count?money(r.avg,true):'–')+' each</div>'+
+      '<div class="rank-fix">'+esc(pos?HEDGE:d.fix)+'</div></div>';
+  }).join('');
+  const rulesSec='<section><h2>Which habits cost you</h2><div class="panel">'+(rankHtml||'<p class="note">No rule breaks in this data.</p>')+'</div>'+
+    '<p class="note">Ranked by cost. A trade can break several rules, so rows overlap — each row is that rule’s own P&amp;L, not a re-run of your account.</p></section>';
+
+  // 5. The numbers
+  const scratch=S.n-S.wins-S.losses;
   const net=S.gross-charges;
-  const tWord=Math.abs(S.t)<1?'Not distinguishable from luck yet':Math.abs(S.t)<2?'Some signal, not yet convincing':'Reasonably strong signal';
-  const cutTxt=$('cutoff').value||'14:30';
-  const ruleDefs=[
-    ['overnight','Held overnight','Bought on one day, sold on another.'],
-    ['avgdown','Added to a losing position','Bought at a worse price than a lot you already held in the same contract.'],
-    ['late','Entered after '+cutTxt,'New position opened after your cutoff.'],
-    ['slow','Loser held over '+o.slow+' min','Closed at a loss, after more than your exit time.'],
-    ['afterLimit','Entered after the daily loss limit','Opened after your realized loss for the day had reached '+money(o.limit)+'.']
-  ];
-  const rows=ruleDefs.map(d=>{const r=A.rules[d[0]];return '<tr><td>'+d[1]+'<small>'+d[2]+'</small></td><td class="n">'+r.count+'</td><td class="n '+cls(r.pnl)+'">'+money(r.pnl,true)+'</td><td class="n '+cls(r.avg)+'">'+(r.count?money(r.avg,true):'–')+'</td><td class="n '+cls(r.without)+'">'+money(r.without,true)+'</td></tr>'}).join('');
-  const cleanAvg=A.clean.n?A.clean.pnl/A.clean.n:0,dirtyAvg=A.dirty.n?A.dirty.pnl/A.dirty.n:0;
-  const dayItems=Object.keys(A.days).sort().map(d=>({label:d.slice(8)+'/'+d.slice(5,7),value:A.days[d].pnl}));
-  const hourItems=Object.keys(A.hours).map(Number).sort((a,b)=>a-b).map(h=>({label:String(h).padStart(2,'0')+'h',value:A.hours[h].pnl}));
+  const plainT=Math.abs(S.t)<1
+    ?'Not distinguishable from luck yet. With '+S.n+' trades and this much variance, results like this happen by chance more often than you’d like.'+(I.need?' At this pace you’d need about '+I.need.toLocaleString('en-IN')+' similar trades before an edge is statistically credible.':'')
+    :Math.abs(S.t)<2?'Some signal, not yet convincing.'+(I.need?' Roughly '+I.need.toLocaleString('en-IN')+' similar trades would settle it.':'')
+    :'Reasonably strong signal. This sample is behaving like a real edge, though one month is still a short window.';
+  const statsSec='<section><h2>The numbers</h2><div class="stats">'+
+    '<div class="stat"><span class="k">GROSS P&amp;L</span><span class="v '+cls(S.gross)+'">'+money(S.gross,true)+'</span><span class="h">'+S.n+' closed trades over '+I.days.length+' days</span></div>'+
+    (charges>0?'<div class="stat"><span class="k">NET OF CHARGES</span><span class="v '+cls(net)+'">'+money(net,true)+'</span><span class="h">'+money(charges)+' charges, about '+money(S.n?charges/S.n:0)+' per trade</span></div>':'')+
+    '<div class="stat wide"><span class="k">WIN RATE vs BREAK-EVEN</span><span class="v">'+(S.winRate*100).toFixed(0)+'% <span class="vs">vs '+(I.required?I.required.toFixed(0)+'% needed':'break-even')+'</span></span>'+
+      '<span class="h wr"><i class="wb" style="width:'+(S.winRate*100).toFixed(0)+'%;background:var(--gain)"></i><i class="wb" style="width:'+(I.required||0).toFixed(0)+'%;background:var(--muted)"></i></span>'+
+      '<span class="h">'+S.wins+' wins &middot; '+S.losses+' losses'+(scratch?' &middot; '+scratch+' scratch':'')+'</span></div>'+
+    '<div class="stat"><span class="k">WINS vs LOSSES</span><span class="v">'+money(S.avgWin)+' / '+money(S.avgLoss)+'</span><span class="h">Your average win is smaller than your average loss'+(I.required?' — you need '+(100/(1+S.payoff)).toFixed(0)+'% wins to break even':'')+'</span></div>'+
+    '<div class="stat"><span class="k">PROFIT PER TRADE</span><span class="v '+cls(S.expectancy)+'">'+money(S.expectancy,true)+'</span><span class="h">before charges</span></div>'+
+    '<div class="stat"><span class="k">TYPICAL HOLD</span><span class="v">'+mins(S.holdWin)+' / '+mins(S.holdLoss)+'</span><span class="h">winners / losers</span></div>'+
+    '<div class="stat"><span class="k">WITHOUT YOUR 3 BEST</span><span class="v '+cls(S.gross-I.top3Sum-charges)+'">'+money(S.gross-I.top3Sum-charges,true)+'</span><span class="h">'+(charges>0?'after charges':'before charges')+' — fragility check</span></div>'+
+  '</div>'+
+  (charges<1?'<p class="nag">Add your total charges from your P&amp;L statement. On F&amp;O trading at this size they often run into the thousands — they can erase a large share of this profit.</p>':'')+
+  '<details class="disc"><summary>How sure is this? (t-stat '+S.t.toFixed(2)+')</summary><p>'+esc(plainT)+'</p></details></section>';
+
+  // 6. Charts
+  const dayItems=I.days.map(d=>({label:d.slice(8)+'/'+d.slice(5,7),value:A.days[d].pnl}));
+  const hourItems=Object.keys(A.hours).map(Number).sort((a,b)=>a-b).map(h=>({label:String(h).padStart(2,'0')+'h',value:A.hours[h].pnl,n:A.hours[h].n}));
+  const chartsSec=
+    '<section><h2>Equity curve</h2><div class="panel">'+equityChart(I.series,I.dd)+'</div>'+
+      '<p class="note">'+(I.dd.amt>0?'Your worst stretch gave back '+money(I.dd.amt)+' from '+I.dd.from.slice(8)+'/'+I.dd.from.slice(5,7)+' to '+I.dd.to.slice(8)+'/'+I.dd.to.slice(5,7)+'. ':'')+'Ends at '+money(I.series.length?I.series[I.series.length-1].cum:0,true)+'.</p></section>'+
+    '<section><h2>P&amp;L by day</h2><div class="panel">'+barChart(dayItems,v=>k(v))+'</div>'+
+      '<p class="note">Best day '+(I.best?I.best.date.slice(8)+'/'+I.best.date.slice(5,7)+' '+money(I.best.pnl,true):'–')+' &middot; Worst day '+(I.worst?I.worst.date.slice(8)+'/'+I.worst.date.slice(5,7)+' '+money(I.worst.pnl,true):'–')+(I.streak>1?' &middot; Longest losing streak '+I.streak+' days':'')+'</p></section>'+
+    '<section><h2>P&amp;L by entry hour</h2><div class="panel">'+barChart(hourItems,v=>k(v))+'</div>'+
+      '<p class="note">Each bar adds up the trades you opened in that hour, with trade counts underneath.</p></section>';
+
+  // 7. Ten largest losses
   const worst=[...rt].sort((a,b)=>a.pnl-b.pnl).slice(0,10);
-  const tagNames={overnight:'overnight',avgdown:'added to loser',late:'late entry',slow:'slow exit',afterLimit:'past loss limit'};
+  const tagNames={overnight:'overnight',avgdown:'added to loser',late:'late entry',slow:'slow exit',afterLimit:'past loss limit',chase:'chasing'};
   const worstRows=worst.map(r=>{
     const tags=Object.keys(r.flags).filter(f=>r.flags[f]).map(f=>'<span class="tag">'+tagNames[f]+'</span>').join('');
-    return '<tr><td>'+esc(r.sym)+'<small>'+r.ein.date+' '+String(Math.floor(r.ein.tod/60)).padStart(2,'0')+':'+String(r.ein.tod%60).padStart(2,'0')+' &middot; '+(r.side===1?'long':'short')+' '+r.q+'</small></td><td class="n">'+r.pin.toFixed(2)+' → '+r.pout.toFixed(2)+'</td><td class="n">'+mins(r.hold)+'</td><td class="n loss">'+money(r.pnl,true)+'</td><td>'+(tags||'–')+'</td></tr>';
+    const hh=String(Math.floor(r.ein.tod/60)).padStart(2,'0')+':'+String(r.ein.tod%60).padStart(2,'0');
+    return '<tr><td>'+esc(r.sym)+'<small>'+r.ein.date+' '+hh+' &middot; '+(r.side===1?'long':'short')+' '+r.q+'</small></td><td class="n">'+r.pin.toFixed(2)+' &rarr; '+r.pout.toFixed(2)+'</td><td class="n">'+mins(r.hold)+'</td><td class="n loss">'+money(r.pnl,true)+'</td><td>'+(tags||'&ndash;')+'</td></tr>';
   }).join('');
-  const costLine=charges>0?'<div class="stat"><span class="k">NET OF CHARGES</span><span class="v '+cls(net)+'">'+money(net,true)+'</span><span class="h">'+money(charges)+' charges, about '+money(S.n?charges/S.n:0)+' per trade</span></div>':'';
-  const src=IS_SAMPLE?'<span class="sample">Sample data</span> <span class="status">24 made-up fills so you can see how the report reads.</span>':'<span class="status">'+esc(FILENAME)+' &middot; '+FILLS.length+' fills &middot; '+S.n+' round trips</span>';
-  $('out').innerHTML=
-  '<section>'+src+
-    '<div class="split">'+
-      '<div class="verdict ok"><span class="lab">Trades that followed every rule ('+A.clean.n+')</span><span class="big '+cls(A.clean.pnl)+'">'+money(A.clean.pnl,true)+'</span><span class="lab">'+(A.clean.n?money(cleanAvg,true)+' per trade':'none')+'</span></div>'+
-      '<div class="verdict bad"><span class="lab">Trades that broke at least one rule ('+A.dirty.n+')</span><span class="big '+cls(A.dirty.pnl)+'">'+money(A.dirty.pnl,true)+'</span><span class="lab">'+(A.dirty.n?money(dirtyAvg,true)+' per trade':'none')+'</span></div>'+
-    '</div></section>'+
-  '<section><h2>Which rules cost you</h2>'+
-    '<div class="tbl"><table><thead><tr><th>Rule</th><th class="n">Trades</th><th class="n">P&amp;L of those</th><th class="n">Per trade</th><th class="n">Total without them</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-    '<p class="note">A trade can break several rules, so the rows overlap. "Total without them" simply removes those trades from your gross total. A real rule would change the exit rather than delete the trade, so read it as the size of the problem, not a forecast.</p></section>'+
-  '<section><h2>The numbers</h2><div class="stats">'+
-    '<div class="stat"><span class="k">GROSS P&amp;L</span><span class="v '+cls(S.gross)+'">'+money(S.gross,true)+'</span><span class="h">'+S.n+' round trips</span></div>'+costLine+
-    '<div class="stat"><span class="k">WIN RATE</span><span class="v">'+(S.winRate*100).toFixed(0)+'%</span><span class="h">'+S.wins+' wins, '+S.losses+' losses</span></div>'+
-    '<div class="stat"><span class="k">AVERAGE WIN / LOSS</span><span class="v">'+money(S.avgWin)+' / '+money(S.avgLoss)+'</span><span class="h">payoff ratio '+S.payoff.toFixed(2)+(S.payoff>0?' (needs '+(100/(1+S.payoff)).toFixed(0)+'% wins to break even)':'')+'</span></div>'+
-    '<div class="stat"><span class="k">PROFIT PER TRADE</span><span class="v '+cls(S.expectancy)+'">'+money(S.expectancy,true)+'</span><span class="h">before charges</span></div>'+
-    '<div class="stat"><span class="k">MEDIAN HOLD</span><span class="v">'+mins(S.holdWin)+' / '+mins(S.holdLoss)+'</span><span class="h">winners / losers</span></div>'+
-    '<div class="stat"><span class="k">EDGE TEST (T-STAT)</span><span class="v">'+S.t.toFixed(2)+'</span><span class="h">'+tWord+'</span></div>'+
-    '<div class="stat"><span class="k">WITHOUT YOUR BEST 3 TRADES</span><span class="v '+cls(S.grossNoBest3-charges)+'">'+money(S.grossNoBest3-charges,true)+'</span><span class="h">'+(charges>0?'after charges':'before charges')+'</span></div>'+
-  '</div></section>'+
-  '<section><h2>P&amp;L by day</h2><div class="panel">'+barChart(dayItems,v=>k(v))+'</div></section>'+
-  '<section><h2>P&amp;L by entry hour</h2><div class="panel">'+barChart(hourItems,v=>k(v))+'</div>'+
-    '<p class="note">Each bar adds up the trades you opened in that hour.</p></section>'+
-  '<section><h2>Ten largest losses</h2><div class="tbl"><table><thead><tr><th>Contract</th><th class="n">Entry → exit</th><th class="n">Held</th><th class="n">P&amp;L</th><th>Rules broken</th></tr></thead><tbody>'+worstRows+'</tbody></table></div></section>';
+  const worstSec='<section><h2>Ten largest losses</h2><div class="tbl"><table><thead><tr><th>Contract</th><th class="n">Price move</th><th class="n">Time in trade</th><th class="n">Lost</th><th>What went wrong</th></tr></thead><tbody>'+worstRows+'</tbody></table></div></section>';
+
+  $('out').innerHTML='<section>'+src+'</section>'+verdict+leak+beh+rulesSec+statsSec+chartsSec+worstSec;
+  LAST_REPORT=buildReport(A,I,ruleRows,charges);
+  const cb=$('copy');
+  if(cb)cb.onclick=()=>copyText(LAST_REPORT,cb);
 }
 function load(file){
   const rd=new FileReader();
@@ -304,8 +607,9 @@ function load(file){
       const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:null});
       FILLS=fillsFromRows(rows);IS_SAMPLE=false;FILENAME=file.name;
       $('status').textContent='Loaded '+file.name;$('status').className='status';render();
-    }catch(err){$('status').textContent=err.message||'Could not read that file.';$('status').className='status err'}
+    }catch(err){$('out').innerHTML='';$('status').textContent=err.message||'Could not read that file.';$('status').className='status err'}
   };
+  $('status').textContent='Reading '+file.name+'…';$('status').className='status';
   rd.readAsArrayBuffer(file);
 }
 $('file').addEventListener('change',e=>{if(e.target.files[0])load(e.target.files[0])});
