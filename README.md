@@ -24,13 +24,6 @@ Your file is read in the browser. Nothing is uploaded or stored.
 
 - `index.html`: the whole app (HTML, CSS and JavaScript in one file). It loads the SheetJS library from cdnjs to read .xlsx files, and two fonts from Google Fonts. A .csv file is read without SheetJS, and the page falls back to system fonts if the fonts do not load.
 
-## Host it on GitHub Pages
-
-1. Create a new repository on GitHub, for example `tradebook-analyzer`.
-2. Add `index.html` and `README.md` to the repository (Add file, then Upload files).
-3. Open the repository's Settings, then Pages.
-4. Under Build and deployment, choose Deploy from a branch, select the `main` branch and the `/ (root)` folder, then Save.
-5. After a minute the site is live at `https://<your-username>.github.io/<repository-name>/`.
 
 ## Using it
 
